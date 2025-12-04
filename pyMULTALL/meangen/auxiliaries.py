@@ -9,6 +9,8 @@ MEANGEN auxiliary functions, mainly for I/O.
 import yaml
 from pathlib import Path
 from textwrap import dedent
+from shutil import copy2
+
 
 def create_meangen_input_file(yaml_file, meangen_file='meangen.in', out_dir=None):
     """
@@ -296,6 +298,35 @@ def create_meangen_input_file(yaml_file, meangen_file='meangen.in', out_dir=None
     return input_data
 
 
+def create_fresh_input_file(case_dir, input_file=None):
+    """
+    Create a clean YAML input file.
+
+    Parameters
+    ----------
+    case_dir : Path or str
+        Directory where the new input file is copied into.
+    input_file : Path or str, optional
+        Name of the YAML input file. If None, the original name 'input.yaml' is
+        used. The default is None.
+
+    Returns
+    -------
+    None.
+
+    """
+    
+    case_dir = Path(case_dir)
+    print(f'Creating clean YAML input file in \n\t{case_dir.resolve()}')
+    # copy input.yaml file into the given directory
+    # (since a directory is given as destination, the original filename is kept)
+    copy2(Path('./input.yaml'), case_dir)
+    
+
+# -----------------------------------------------------------------------------
+#                           PRIVATE FUNCTIONS
+# -----------------------------------------------------------------------------
+
 def _add_block(code, new_block):
     # remove indentation, if present
     new_code = dedent(new_block)
@@ -314,3 +345,4 @@ if __name__ == '__main__':
     yaml_file = Path('../../prova/2stg-compr-meangen-17.4.yaml')
     #yaml_file = Path('../../prova/prova.yaml')
     input_data = create_meangen_input_file(yaml_file)
+    create_fresh_input_file('../../prova')
