@@ -329,7 +329,33 @@ def create_fresh_input_file(case_dir, input_file=None):
     # copy input.yaml file into the given directory
     # (since a directory is given as destination, the original filename is kept)
     copy2(Path('./input.yaml'), case_dir)
+
+
+def copy_case_file(case_dir, case_file):
+    """
+    Copy a case file from a given case directory (to ensure reproducibility).
+
+    Parameters
+    ----------
+    case_dir : Path or str
+        Case directory.
+    input_file : Path or str
+        Path of the case file to be copied.
+
+    Returns
+    -------
+    None.
+
+    """
     
+    case_dir = Path(case_dir)
+    case_file = Path(case_file)
+    # print the case file w.r.t. the case dir, not the absolute path
+    print(f'Copying case file {case_file.relative_to(case_dir)} to \n\t{case_dir.resolve()}')
+    # copy input.yaml file into the given directory
+    # (since a directory is given as destination, the original filename is kept)
+    copy2(case_file, case_dir)
+
 
 # -----------------------------------------------------------------------------
 #                           PRIVATE FUNCTIONS
