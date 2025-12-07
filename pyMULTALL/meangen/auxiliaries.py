@@ -10,6 +10,7 @@ import yaml
 from pathlib import Path
 from textwrap import dedent
 from shutil import copy2
+from prettytable import PrettyTable
 
 
 def create_meangen_input_file(yaml_file, meangen_file='meangen.in', out_dir=None):
@@ -141,9 +142,6 @@ def create_meangen_input_file(yaml_file, meangen_file='meangen.in', out_dir=None
         print(f'STAGE {stage_idx} DATA')
         stage = input_data['stages'][stage_idx].copy()
         
-        # TODO
-        #     B                        MIXTYP = INPUT TYPE FOR FLO_TYP = "MIX" .
-        
         if abs(stage['alpha_in']) > 90:
             raise ValueError('Stage inlet absolute flow angle cannot be >90° or <-90°')
         if abs(stage['alpha_out']) > 90:
@@ -165,13 +163,23 @@ def create_meangen_input_file(yaml_file, meangen_file='meangen.in', out_dir=None
                   {stage['N_points_stream_surface']}                    NUMBER OF POINTS ON THE STREAM SURFACE.""")
         print(line_format.format('Number of points on the stream surface', stage['N_points_stream_surface'], ''))
         
+        if len(stage['stream_surf_axial_coords']) != stage['N_points_stream_surface']:
+            raise ValueError(f"The number of stream surface axial coordinates must match the given number of points on the stream surface ({stage['N_points_stream_surface']})")
+        
+        if len(stage['stream_surf_radial_coords']) != stage['N_points_stream_surface']:
+            raise ValueError(f"The number of stream surface radial coordinates must match the given number of points on the stream surface ({stage['N_points_stream_surface']})")
+        
+        if len(stage['meridional_velocity_ratios']) != stage['N_points_stream_surface']:
+            raise ValueError(f"The number of meridional axial velocity ratios must match the given number of points on the stream surface ({stage['N_points_stream_surface']})")
+        
+        stream_surf = PrettyTable()
+        stream_surf.title = 'Stream surface'
+        stream_surf.add_column('Axial coordinates [m]', stage['stream_surf_axial_coords'])
+        stream_surf.add_column('Radial coordinates [m]', stage['stream_surf_radial_coords'])
+        stream_surf.add_column('Meridional velocity ratio [-]', stage['meridional_velocity_ratios'])
+        print(stream_surf)
+        
         # TODO
-        #      THE FOLLOWING LINE OF DATA CONTAINS THE STREAM SURFACE AXIAL COORDINATES.
-        #         0.0000    0.0500    0.1000    0.1100    0.1500    0.1600
-        #      THE FOLLOWING LINE OF DATA CONTAINS THE STREAM SURFACE RADIAL COORDINATES.
-        #         0.5000    0.5005    0.5010    0.5012    0.5017    0.5020
-        #      THE FOLLOWING LINE OF DATA CONTAINS THE MERIDIONAL VELOCITY RATIOS.
-        #         1.0000    1.0000    1.0000    1.0000    1.0000    1.0000
         #         2    3    4    5     LEADING AND TRAILING EDGE POINTS ON THE MEAN STREAM SURFACE.
         
         if not isinstance(stage['change_stream_surf_coords'], bool):
