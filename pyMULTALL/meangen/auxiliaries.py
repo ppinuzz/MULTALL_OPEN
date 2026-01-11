@@ -331,16 +331,16 @@ def create_fresh_input_file(case_dir, input_file=None):
     copy2(Path('./input.yaml'), case_dir)
 
 
-def copy_case_file(case_dir, case_file):
+def copy_case_file(case_file, out_dir):
     """
-    Copy a case file from a given case directory (to ensure reproducibility).
+    Copy a case file to a given case directory (to ensure reproducibility).
 
     Parameters
     ----------
-    case_dir : Path or str
-        Case directory.
-    input_file : Path or str
+    case_file : Path or str
         Path of the case file to be copied.
+    out_dir : Path or str
+        Directory where to copy the case file.
 
     Returns
     -------
@@ -348,13 +348,12 @@ def copy_case_file(case_dir, case_file):
 
     """
     
-    case_dir = Path(case_dir)
+    out_dir = Path(out_dir)
     case_file = Path(case_file)
-    # print the case file w.r.t. the case dir, not the absolute path
-    print(f'Copying case file {case_file.relative_to(case_dir)} to \n\t{case_dir.resolve()}')
+    print(f'Copying case file \n\t{case_file.resolve()} \nto \n\t{out_dir.resolve()}')
     # copy input.yaml file into the given directory
     # (since a directory is given as destination, the original filename is kept)
-    copy2(case_file, case_dir)
+    copy2(case_file, out_dir)
 
 
 # -----------------------------------------------------------------------------
@@ -378,5 +377,7 @@ def _add_block(code, new_block):
 if __name__ == '__main__':
     yaml_file = Path('../../prova/2stg-compr-meangen-17.4.yaml')
     #yaml_file = Path('../../prova/prova.yaml')
-    input_data = create_meangen_input_file(yaml_file)
+    #input_data = create_meangen_input_file(yaml_file)
     create_fresh_input_file('../../prova')
+    
+    copy_case_file('../../prova/cosaMancaAncora.in', '../../prova/prova')
