@@ -19,6 +19,7 @@ from . import meangen
 from . import stagen
 from . import multall
 from . import plotutils
+from . import auxiliaries
 # b) and then import the MODULES from within each subpackage
 # (see all the other __init__.py files in the subdirectories of this package)
 
