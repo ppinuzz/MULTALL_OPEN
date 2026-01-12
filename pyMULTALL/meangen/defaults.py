@@ -1,12 +1,17 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-Default values for several parameters.
+Default values for several MEANGEN parameters.
 
 @author: Andrea Pinardi <andrea.pinardi@polimi.it>
 """
 
 from dataclasses import dataclass
+from pathlib import Path
+from pyMULTALL.defaults import PYMULTALL
+
+# path of MEANGEN executable w.r.t. this file
+MEANGEN = PYMULTALL / 'bin'/ 'MEANGEN.exe'
 
 @dataclass 
 class TurbineOpts:
