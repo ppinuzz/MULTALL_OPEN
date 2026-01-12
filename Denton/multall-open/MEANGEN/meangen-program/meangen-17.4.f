@@ -58,7 +58,7 @@ C
       CHARACTER*72  DUMMY_LINE
 C
       OPEN(UNIT=10, FILE= 'meangen.out')
-      OPEN(UNIT=5,  FILE= '/dev/tty')
+C      OPEN(UNIT=5,  FILE= '/dev/tty') 		! original code, not necessary now
 C
       PI     = 3.14159
       DEGRAD = PI/180.
