@@ -7,20 +7,14 @@ MEANGEN core functions.
 """
 
 import subprocess
-from dataclasses import dataclass
 
 import pyMULTALL.meangen as meangen
 import pyMULTALL.auxiliaries as aux
 
-@dataclass
-class MeangenOptions:
-    # whether to use Denton's original Fortran compiled executable MEANGEN.exe
-    Fortran: bool = True
 
-
-def meangen(case_dir, opts=MeangenOptions()):
+def meangen(case_dir, Fortran=True):
     
-    if opts.Fortran:
+    if Fortran:
         print("Running Denton's original MEANGEN Fortran executable...")
         MEANGEN_EXE = meangen.defaults.MEANGEN
         
