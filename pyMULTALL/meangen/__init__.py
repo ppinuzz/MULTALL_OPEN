@@ -10,3 +10,4 @@
 
 from . import defaults
 from . import core
+from . import auxiliaries
