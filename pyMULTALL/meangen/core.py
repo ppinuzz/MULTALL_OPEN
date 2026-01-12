@@ -18,7 +18,7 @@ class MeangenOptions:
     Fortran: bool = True
 
 
-def MEANGEN(case_dir, opts=MeangenOptions()):
+def meangen(case_dir, opts=MeangenOptions()):
     
     if opts.Fortran:
         print("Running Denton's original MEANGEN Fortran executable...")
