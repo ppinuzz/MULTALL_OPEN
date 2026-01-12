@@ -11,7 +11,7 @@ import platform
 import socket
 import pyMULTALL
 
-def print_startup_message(len_separator=61):
+def print_startup_message(len_separator=70):
     
     separator = len_separator * '-'
     title = _title_formatting('pyMULTALL-OPEN', separator)
@@ -20,8 +20,8 @@ def print_startup_message(len_separator=61):
     print(title)
     print(separator)
     
-    print(f'Original MEANGEN author : {pyMULTALL.__author__[0]} \t {pyMULTALL.__email__[0]}')
-    print(f'Python code author      : {pyMULTALL.__author__[1]} \t {pyMULTALL.__email__[1]}')
+    print(f'Original author         : {pyMULTALL.__author__[0]:15s}  {pyMULTALL.__email__[0]}')
+    print(f'Python code author      : {pyMULTALL.__author__[1]:15s}  {pyMULTALL.__email__[1]}')
     print(f'Version                 : {pyMULTALL.__version__}')
     print(separator)
     # https://stackoverflow.com/a/18944849/17220538

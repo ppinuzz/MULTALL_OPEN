@@ -12,7 +12,9 @@ import pyMULTALL.meangen as pymeangen
 import pyMULTALL.auxiliaries as aux
 
 
-def meangen(case_dir, Fortran=True):
+def meangen(case_dir, Fortran=True, use_input_file=False):
+    
+    pymeangen.auxiliaries.print_startup_message()
     
     if Fortran:
         print("Running Denton's original MEANGEN Fortran executable...")
@@ -37,7 +39,7 @@ def meangen(case_dir, Fortran=True):
                 # (required by MEANGEN)
                 cwd=case_dir.resolve()
             )
-    
     else:
+        
         raise NotImplementedError('Python version of MEANGEN is not implemented yet')
     
