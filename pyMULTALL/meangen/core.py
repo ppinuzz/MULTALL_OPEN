@@ -8,7 +8,7 @@ MEANGEN core functions.
 
 import subprocess
 
-import pyMULTALL.meangen as meangen
+import pyMULTALL.meangen as pymeangen
 import pyMULTALL.auxiliaries as aux
 
 
@@ -16,14 +16,14 @@ def meangen(case_dir, Fortran=True):
     
     if Fortran:
         print("Running Denton's original MEANGEN Fortran executable...")
-        MEANGEN_EXE = meangen.defaults.MEANGEN
+        MEANGEN_EXE = pymeangen.defaults.MEANGEN
         
         # check if file exists
         # https://stackoverflow.com/a/82852/17220538
         if not MEANGEN_EXE.is_file():
-            raise FileNotFoundError(f'MEANGEN executable {meangen.defaults.MEANGEN.resolve()} does NOT exists')
+            raise FileNotFoundError(f'MEANGEN executable {pymeangen.defaults.MEANGEN.resolve()} does NOT exists')
         else:
-            print(f'MEANGEN executable: \n\t{meangen.defaults.MEANGEN.resolve()}')
+            print(f'MEANGEN executable: \n\t{pymeangen.defaults.MEANGEN.resolve()}')
 
 
         if aux.get_OS_name() == aux.OperatingSystem.WINDOWS:
@@ -37,7 +37,7 @@ def meangen(case_dir, Fortran=True):
                 # (required by MEANGEN)
                 cwd=case_dir.resolve()
             )
-        
+    
     else:
         raise NotImplementedError('Python version of MEANGEN is not implemented yet')
     
