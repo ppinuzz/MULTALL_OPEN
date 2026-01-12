@@ -8,4 +8,4 @@
 # subpackages and modules promptly available) with just
 #	import myPackage
 
-from . import myCode1
+#from . import myCode1
