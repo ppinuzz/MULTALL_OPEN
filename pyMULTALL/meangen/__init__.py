@@ -9,3 +9,4 @@
 #	import myPackage
 
 from . import defaults
+from . import core
