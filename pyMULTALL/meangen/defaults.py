@@ -12,6 +12,8 @@ from pyMULTALL.defaults import PYMULTALL
 
 # path of MEANGEN executable w.r.t. this file
 MEANGEN = PYMULTALL / 'bin'/ 'MEANGEN.exe'
+# last MEANGEN version as of 25/11/2025
+VERSION = '17.4'
 
 @dataclass 
 class TurbineOpts:
