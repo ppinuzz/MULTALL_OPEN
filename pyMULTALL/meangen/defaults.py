@@ -9,6 +9,7 @@ Default values for several MEANGEN parameters.
 from dataclasses import dataclass
 from pathlib import Path
 from pyMULTALL.defaults import PYMULTALL
+from pyMULTALL.auxiliaries import GasModel
 
 # path of MEANGEN executable w.r.t. this file
 MEANGEN = PYMULTALL / 'bin'/ 'MEANGEN.exe'
@@ -132,11 +133,10 @@ class CompressorOpts:
 #   END IF
 # =============================================================================
 
-# TODO: change this to a string
-# use perfect gas properties
-gas_props = 1
+
+gas_props = GasModel.PERFECT
 # gas constant [J/kgK] (default: air)
-R_gas = 287.5 
+R_gas = 287.15
 # gas specific heat ratio Cp/Cv (default: air)
 gamma_gas = 1.40
 

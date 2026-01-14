@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
-General auxiliary functions, not related to a specific (sub)program.
+General auxiliary functions and objects, not related to a specific (sub)program.
 
 @author: Andrea Pinardi <andrea.pinardi@polimi.it>
 """
@@ -34,6 +34,11 @@ def get_OS_name():
             raise UnrecognizedOSError('Unknown operating system')
     
     return OS_code
+
+
+class GasModel(Enum):
+    PERFECT = 1
+
 
 if __name__ == '__main__':
     
