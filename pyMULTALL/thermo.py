@@ -1,0 +1,82 @@
+#!/usr/bin/env python3
+# -*- coding: utf-8 -*-
+"""
+Thermodynamic utilities.
+
+@author: Andrea Pinardi <andrea.pinardi@polimi.it>
+"""
+
+from abc import ABC, abstractmethod
+from numpy.polynomial import Polynomial
+from CoolProp import AbstractState
+import CoolProp.CoolProp as CP
+from defaults import THERMO_BACKEND
+
+# universal gas constant [J/k*mol]
+R = 8.31446261815324
+
+# -----------------------------------------------------------------------------
+#                   SPECIFIC HEAT AT CONSTANT PRESSURE
+# -----------------------------------------------------------------------------
+
+# basic blueprint for any Cp model: it must provide a Cp method that takes
+# 2 float in input and returns a float
+# ABC is a dummy class crashes if you try to instantiate CpModel directly in
+# your code (being just "a blueprint", you cannot use it in your main code, 
+# it's to be used by the Cp model methods only)
+class CpModel(ABC):
+    @abstractmethod
+    def Cp(self, T: float, p: float | None = None) -> float:
+        """Return Cp [J/(kgK)]"""
+
+# ---------------------------- ACTUAL Cp MODELS ----------------------------
+class ConstantCp(CpModel):
+    def __init__(self, Cp0: float):
+        if Cp0 <= 0:
+            raise ValueError('Constant Cp must be positive')
+        self.Cp0 = Cp0
+
+    def Cp(self, T: float, p: float | None = None) -> float:
+        if T < 0:
+            raise ValueError(f'Temperature cannot be negative')
+        return self.Cp0
+
+
+class NASAPolynomialCp(CpModel):
+    def __init__(self, coeffs: list[float], MM: float, Tmin: float | None, Tmax: float | None):
+        # use the _ to mark them as private
+        # NB: polynomial coefficients are listed from a0 to aN, as in
+        #   f(T) = a0 + a1 T + a2 T^2 + ...
+        self._NASApoly = Polynomial(coeffs)
+        self._R_mass = R / MM
+        self.Tmin = Tmin
+        self.Tmax = Tmax
+
+    def Cp(self, T: float, p: float | None = None) -> float:
+        invalid_temp_message = f'T = {T} K outside NASA validity range [{self.Tmin}, {self.Tmax}]'
+        # short-circuiting: se la prima condizione è falsa, la seconda viene
+        # ignorata (e non darà errore, come invece T < None darebbe)
+        if (self.Tmin is not None and T < self.Tmin) or (self.Tmax is not None and T > self.Tmax):
+            raise ValueError(invalid_temp_message)
+        if T < 0:
+            raise ValueError(f'Temperature cannot be negative')
+
+        # NASA polynomials are written as Cp/R = f(T)
+        Cp_dim = self._R_mass * self._NASApoly(T)
+        
+        return Cp_dim
+
+
+class RealGasCp(CpModel):
+    def __init__(self, fluid):
+        self.FLUID = AbstractState(THERMO_BACKEND, fluid)
+
+    def Cp(self, T: float, p: float) -> float:
+        if T < 0:
+            raise ValueError(f'Temperature cannot be negative')
+        if p < 0:
+            raise ValueError(f'Pressure cannot be negative')
+        self.FLUID.update(CP.PT_INPUTS, p, T)
+        Cp_real = self.FLUID.cpmass()
+
+        return Cp_real
