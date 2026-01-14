@@ -19,15 +19,25 @@ R = 8.31446261815324
 #                   SPECIFIC HEAT AT CONSTANT PRESSURE
 # -----------------------------------------------------------------------------
 
-# basic blueprint for any Cp model: it must provide a Cp method that takes
-# 2 float in input and returns a float
-# ABC is a dummy class crashes if you try to instantiate CpModel directly in
-# your code (being just "a blueprint", you cannot use it in your main code, 
+# basic blueprint for any Cp model: it must provide a 
+#   1) _Cp method that takes 2 float in input and returns a float and does the
+#   actual calculation
+#   2) a Cp method that checks the input and then calls _Cp to calculate the Cp
+# ABC is a dummy class: it crashes if you try to instantiate CpModel directly
+# in your code (being just "a blueprint", you cannot use it in your main code, 
 # it's to be used by the Cp model methods only)
 class CpModel(ABC):
-    @abstractmethod
+    
     def Cp(self, T: float, p: float | None = None) -> float:
-        """Return Cp [J/(kgK)]"""
+        if T <= 0:
+            raise ValueError('Temperature must be > 0 K')
+        if p is not None and p <= 0:
+            raise ValueError('Pressure must be > 0 Pa')
+        return self._Cp(T, p)
+    
+    @abstractmethod
+    def _Cp(self, T: float, p: float | None = None) -> float:
+        """Model specific Cp implementation [J/(kgK)]"""
 
 # ---------------------------- ACTUAL Cp MODELS ----------------------------
 class ConstantCp(CpModel):
@@ -36,9 +46,7 @@ class ConstantCp(CpModel):
             raise ValueError('Constant Cp must be positive')
         self.Cp0 = Cp0
 
-    def Cp(self, T: float, p: float | None = None) -> float:
-        if T < 0:
-            raise ValueError(f'Temperature cannot be negative')
+    def _Cp(self, T: float, p: float | None = None) -> float:
         return self.Cp0
 
 
@@ -52,14 +60,12 @@ class NASAPolynomialCp(CpModel):
         self.Tmin = Tmin
         self.Tmax = Tmax
 
-    def Cp(self, T: float, p: float | None = None) -> float:
+    def _Cp(self, T: float, p: float | None = None) -> float:
         invalid_temp_message = f'T = {T} K outside NASA validity range [{self.Tmin}, {self.Tmax}]'
         # short-circuiting: se la prima condizione è falsa, la seconda viene
         # ignorata (e non darà errore, come invece T < None darebbe)
         if (self.Tmin is not None and T < self.Tmin) or (self.Tmax is not None and T > self.Tmax):
             raise ValueError(invalid_temp_message)
-        if T < 0:
-            raise ValueError(f'Temperature cannot be negative')
 
         # NASA polynomials are written as Cp/R = f(T)
         Cp_dim = self._R_mass * self._NASApoly(T)
@@ -71,11 +77,7 @@ class RealGasCp(CpModel):
     def __init__(self, fluid):
         self.FLUID = AbstractState(THERMO_BACKEND, fluid)
 
-    def Cp(self, T: float, p: float) -> float:
-        if T < 0:
-            raise ValueError(f'Temperature cannot be negative')
-        if p < 0:
-            raise ValueError(f'Pressure cannot be negative')
+    def _Cp(self, T: float, p: float) -> float:
         self.FLUID.update(CP.PT_INPUTS, p, T)
         Cp_real = self.FLUID.cpmass()
 
