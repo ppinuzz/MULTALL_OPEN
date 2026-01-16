@@ -1,8 +1,13 @@
 # MULTALL_OPEN 20.9 #
 
 - Prof. John Denton's `MULTALL-OPEN` turbomachinery design system
-- Version 20.9 (4/12/2020), as downloaded on 25/11/2025 from the [MULTALL-OPEN website](https://sites.google.com/view/multall-turbomachinery-design/home?authuser=0)
+- Version 20.9 as downloaded on 25/11/2025 from the [MULTALL-OPEN website](https://sites.google.com/view/multall-turbomachinery-design/home?authuser=0)
 
+| Program 			| Version |
+|-------------------|---------|
+| `meangen` 	 	| 17.4 	  |
+| `stagen`  	 	| 18.1 	  |
+| `multall-open` 	| 21.3 	  |
 
 ## A few comments regarding the inputs ##
 - `machine_flow_type`: 
@@ -32,7 +37,7 @@ since `'/dev/tty'` doesn't exist on Windows (there are ways to have it patched t
 
 ## How to compile the code ##
 1. Run
-```
+```bash
 gfortran -std=legacy -o MEANGEN.exe meangen-17.4.f
 ```
 from within `Denton/multall-open/MEANGEN/meangen-program`
@@ -45,4 +50,19 @@ from within `Denton/multall-open/MEANGEN/meangen-program`
 ```
 CASE_DIR/
 |-- meangen.in
+```
+
+
+## Input selection process ##
+
+```mermaid
+---
+title: If you're not using a file, but screen input
+---
+flowchart TD
+    start([Start]) --> 
+	comprOrTurb@{shape: diamond, label: "Compressor \n or \n Turbine?"}
+	comprOrTurb --> C[C]
+	comprOrTurb --> T[T]
+	comprOrTurb --> stop([Stop])
 ```
