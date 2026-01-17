@@ -76,7 +76,7 @@ class NASAPolynomialCp(CpModel):
 
 
 class RealGasCp(CpModel):
-    def __init__(self, fluid):
+    def __init__(self, fluid: str):
         self.FLUID = AbstractState(THERMO_BACKEND, fluid)
 
     def _Cp(self, T: float, p: float) -> float:
@@ -84,3 +84,26 @@ class RealGasCp(CpModel):
         Cp_real = self.FLUID.cpmass()
 
         return Cp_real
+
+
+if __name__ == '__main__':
+    T = 300
+    p = 1e5
+    fluid = 'H2'
+    
+    Cp_H2 = 14.31e3
+    
+    MyCp = ConstantCp(Cp0=Cp_H2)
+    Cp_calc = MyCp.Cp(T, p)
+    print(f'{Cp_calc}')
+    
+    coeffs = [4.078323210e+04, -8.009186040e+02, 8.214702010e+00, 
+              -1.269714457e-02, 1.753605076e-05, -1.202860270e-08,
+              3.368093490e-12]
+    MyCp = NASAPolynomialCp(coeffs=coeffs, MM=2.016, Tmin=200, Tmax=1000)
+    Cp_calc = MyCp.Cp(T, p)
+    print(f'{Cp_calc}')
+    
+    MyCp = RealGasCp(fluid='H2')
+    Cp_calc = MyCp.Cp(T, p)
+    print(f'{Cp_calc}')
