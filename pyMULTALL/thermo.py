@@ -7,7 +7,6 @@ Thermodynamic utilities.
 """
 
 from abc import ABC, abstractmethod
-from numpy.polynomial import Polynomial
 from CoolProp import AbstractState
 import CoolProp.CoolProp as CP
 from defaults import THERMO_BACKEND
