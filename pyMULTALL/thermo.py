@@ -51,7 +51,10 @@ class ConstantCp(CpModel):
 
 
 class NASAPolynomialCp(CpModel):
+
     def __init__(self, coeffs: list[float], MM: float, Tmin: float | None, Tmax: float | None):
+        if MM <= 0:
+            raise ValueError('Molar mass must be > 0 g/mol')
         # use the _ to mark them as private
         # [J/(k*mol)] * [g/mol] = 1000 * [J/(k*mol)] * [kg/mol]
         self._R_mass = 1000 * R / MM
