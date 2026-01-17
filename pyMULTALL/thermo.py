@@ -83,9 +83,55 @@ class RealGasCp(CpModel):
 
     def _Cp(self, T: float, p: float) -> float:
         self.FLUID.update(CP.PT_INPUTS, p, T)
-        Cp_real = self.FLUID.cpmass()
+        Cp = self.FLUID.cpmass()
+        return Cp
 
-        return Cp_real
+
+# -----------------------------------------------------------------------------
+#                                   DENSITY
+# -----------------------------------------------------------------------------
+
+class DensityModel(ABC):
+    
+    def rho(self, T: float, p: float) -> float:
+        if T <= 0:
+            raise ValueError('Temperature must be > 0 K')
+        if p <= 0:
+            raise ValueError('Pressure must be > 0 Pa')
+        return self._rho(T, p)
+    
+    @abstractmethod
+    def _rho(self, T: float, p: float) -> float:
+        """Model specific density implementation [kg/m3]"""
+
+
+class IdealGasDensity(DensityModel):
+    def __init__(self, MM: float):
+        if MM <= 0:
+            raise ValueError('Molar mass must be > 0 g/mol')
+        # use the _ to mark them as private
+        # [J/(k*mol)] * [g/mol] = 1000 * [J/(k*mol)] * [kg/mol]
+        self._R_mass = 1000 * R / MM
+
+    def _rho(self, T: float, p: float | None) -> float:
+        rho = p / (self._R_mass * T)
+        return rho
+
+# since the ideal gas law holds for both perfect and ideal gases, just create
+# a subclass => no "actual" use, but it's neater in the code to call a
+# PerfectGasDensity, rather than an IdealGasDensity, object when using a perfect
+# gas
+class PerfectGasDensity(IdealGasDensity):
+    pass
+
+class RealGasDensity(DensityModel):
+    def __init__(self, fluid: str):
+        self.FLUID = AbstractState(THERMO_BACKEND, fluid)
+
+    def _rho(self, T: float, p: float) -> float:
+        self.FLUID.update(CP.PT_INPUTS, p, T)
+        rho = self.FLUID.rhomass()
+        return rho
 
 
 if __name__ == '__main__':
@@ -94,7 +140,6 @@ if __name__ == '__main__':
     fluid = 'H2'
     
     Cp_H2 = 14.31e3
-    
     MyCp = ConstantCp(Cp0=Cp_H2)
     Cp_calc = MyCp.Cp(T, p)
     print(f'{Cp_calc}')
@@ -109,3 +154,15 @@ if __name__ == '__main__':
     MyCp = RealGasCp(fluid='H2')
     Cp_calc = MyCp.Cp(T, p)
     print(f'{Cp_calc}')
+    
+    MyRho = PerfectGasDensity(MM=2.016)
+    rho_calc = MyRho.rho(T, p)
+    print(f'{rho_calc}')
+    
+    MyRho = IdealGasDensity(MM=2.016)
+    rho_calc = MyRho.rho(T, p)
+    print(f'{rho_calc}')
+    
+    MyRho = RealGasDensity(fluid='H2')
+    rho_calc = MyRho.rho(T, p)
+    print(f'{rho_calc}')
