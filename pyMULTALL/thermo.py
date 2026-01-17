@@ -38,6 +38,7 @@ class CpModel(ABC):
     def _Cp(self, T: float, p: float | None = None) -> float:
         """Model specific Cp implementation [J/(kgK)]"""
 
+
 # ---------------------------- ACTUAL Cp MODELS ----------------------------
 class ConstantCp(CpModel):
     def __init__(self, Cp0: float):
@@ -81,7 +82,12 @@ class RealGasCp(CpModel):
     def __init__(self, fluid: str):
         self.FLUID = AbstractState(THERMO_BACKEND, fluid)
 
-    def _Cp(self, T: float, p: float) -> float:
+    # now p is actually required, but _Cp() interface as defined in the 
+    # abstract method has p: float | None = None
+    # keep the same signature, but add an error internally
+    def _Cp(self, T: float, p: float | None = None) -> float:
+        if p is None:
+            raise ValueError(f'Real-gas Cp model requires pressure as input!')
         self.FLUID.update(CP.PT_INPUTS, p, T)
         Cp = self.FLUID.cpmass()
         return Cp
@@ -113,7 +119,7 @@ class IdealGasDensity(DensityModel):
         # [J/(k*mol)] * [g/mol] = 1000 * [J/(k*mol)] * [kg/mol]
         self._R_mass = 1000 * R / MM
 
-    def _rho(self, T: float, p: float | None) -> float:
+    def _rho(self, T: float, p: float) -> float:
         rho = p / (self._R_mass * T)
         return rho
 
