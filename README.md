@@ -61,8 +61,12 @@ title: If you're not using a file, but screen input
 ---
 flowchart TD
     start([Start]) --> 
-	comprOrTurb@{shape: diamond, label: "Compressor \n or \n Turbine?"}
+	comprOrTurb@{shape: decision, label: "Compressor \n or \n Turbine?"}
 	comprOrTurb --> C[C]
 	comprOrTurb --> T[T]
-	comprOrTurb --> stop([Stop])
+	axialOrMix@{shape: decision, label: "Axial \n or \n Mixed?"}
+	refSection@{shape: decision, label: "Hub, mean or tip radius as reference?"}
+	stop([Stop])
+
+	data@[/"$$T_{t,in}, p_{t,in}, N_s, n, \dot{m}$$"/]
 ```

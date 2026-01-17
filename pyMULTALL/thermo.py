@@ -53,10 +53,12 @@ class ConstantCp(CpModel):
 class NASAPolynomialCp(CpModel):
     def __init__(self, coeffs: list[float], MM: float, Tmin: float | None, Tmax: float | None):
         # use the _ to mark them as private
-        # NB: polynomial coefficients are listed from a0 to aN, as in
-        #   f(T) = a0 + a1 T + a2 T^2 + ...
-        self._NASApoly = Polynomial(coeffs)
-        self._R_mass = R / MM
+        # [J/(k*mol)] * [g/mol] = 1000 * [J/(k*mol)] * [kg/mol]
+        self._R_mass = 1000 * R / MM
+        # TODO: add support for piecewise Cp(T) definition
+        self._NASApoly = lambda T: (coeffs[0]/T**2 + coeffs[1]/T + coeffs[2] + 
+                                    coeffs[3]*T + coeffs[4]*T**2 + coeffs[5]*T**3 +
+                                    coeffs[6]*T**4)
         self.Tmin = Tmin
         self.Tmax = Tmax
 
