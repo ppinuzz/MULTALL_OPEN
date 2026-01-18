@@ -12,7 +12,7 @@ import pyMULTALL.meangen as pymeangen
 import pyMULTALL.auxiliaries as aux
 
 
-def meangen(case_dir, Fortran=True, use_input_file=False):
+def meangen(case_dir, Fortran=True, input_file=False):
     
     pymeangen.auxiliaries.print_startup_message()
     
@@ -40,6 +40,8 @@ def meangen(case_dir, Fortran=True, use_input_file=False):
                 cwd=case_dir.resolve()
             )
     else:
+        
+        # TODO: rea data from input file
         
         raise NotImplementedError('Python version of MEANGEN is not implemented yet')
     
