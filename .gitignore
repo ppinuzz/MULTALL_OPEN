@@ -20,3 +20,6 @@ __pycache__/
 
 # file where I put all the unfinished bits and notes
 DUMP.txt
+
+# docs files (recompile them when needed)
+docs/build
