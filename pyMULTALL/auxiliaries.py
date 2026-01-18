@@ -9,17 +9,48 @@ General auxiliary functions and objects, not related to a specific (sub)program.
 import platform
 from enum import Enum
 
+
 # create a custom exception to make the error message more meaningful
 class UnrecognizedOSError(Exception):
     """Exception raised for unrecognized operating systems."""
+    
     pass
 
+
 class OperatingSystem(Enum):
-    WINDOWS = 0
-    LINUX = 1
+    """
+    Enumeration of supported operating systems.
+
+    Members
+    -------
+    WINDOWS
+        Microsoft Windows operating system.
+    LINUX
+        Linux-based operating systems.
+    MAC
+        Apple macOS (Darwin) operating system.
+    """
+    
+    WINDOWS = 1
+    LINUX = 2
     MAC = 3
 
+
 def get_OS_name():
+    """
+    Retrieve the name of the operating system: Windows, Linux or Mac OS.
+
+    Raises
+    ------
+    UnrecognizedOSError
+        If the OS cannot be determined.
+
+    Returns
+    -------
+    OS_code : OperatingSystem
+        The detected operating system.
+
+    """
     
     # https://stackoverflow.com/a/58071295/17220538
     OS = platform.system()
@@ -37,9 +68,17 @@ def get_OS_name():
 
 
 class GasModel(Enum):
+    """
+    Enumeration of supported gas models.
+    
+    Members
+    -------
+    PERFECT
+        Perfect gas model (Cp = const. and ideal gas law).
+    """
+    
     PERFECT = 1
 
 
 if __name__ == '__main__':
-    
     my_OS = get_OS_name()
