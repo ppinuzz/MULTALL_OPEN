@@ -298,6 +298,43 @@ def _validate_MM(MM: float):
     if MM <= 0:
         raise ValueError('Molar mass must be > 0 g/mol')
 
+def _select_NASA_interval(coeffs, Tmin, Tmax, T):
+    """
+    Return the NASA coefficients, minimum and maximum temperature of the 
+    interval bracketing the given temperature.
+
+    Parameters
+    ----------
+    coeffs : list
+        List of array-like objects, each one containing the 9 NASA polynomial
+        coefficients.
+    Tmin : array-like
+        Minimum temperatures of each interval [K].
+    Tmax : array-like
+        Maximum temperatures of each interval [K].
+    T : float
+        Static temperature [K].
+
+    Returns
+    -------
+    coeffs_T : array-like
+        9 NASA polynomial coefficients for the temperature range containing the
+        given temperature.
+    Tmin_T : float
+        Lower limite of the selected temperature range [K].
+    Tmax_T : float
+        Upper limite of the selected temperature range [K].
+
+    """
+    
+    Tmin = np.asarray(Tmin)
+    Tmax = np.asarray(Tmax)
+    # get index of interval bracketing the value of T
+    # https://stackoverflow.com/a/21815619/17220538
+    idx_interval = np.squeeze(((T >= Tmin) & (T <= Tmax)).nonzero())
+    
+    return coeffs[idx_interval], Tmin[idx_interval], Tmax[idx_interval]
+
 
 if __name__ == '__main__':
     T = 300
@@ -310,10 +347,27 @@ if __name__ == '__main__':
     print(f'{Cp_calc}')
     
     # 7 Cp(T)/R constants + last h(T)/RT constant + last s0(T)/R constant
+# =============================================================================
+#     coeffs = [[4.078323210e+04, -8.009186040e+02, 8.214702010e+00, 
+#               -1.269714457e-02, 1.753605076e-05, -1.202860270e-08,
+#               3.368093490e-12, 2.682484665e+03, -3.043788844e+01],
+#               [5.608128010e+05, -8.371504740e+02, 2.975364532e+00,
+#                1.252249124e-03, -3.740716190e-07, 5.936625200e-11,
+#                -3.606994100e-15, 5.339824410e+03, -2.202774769e+00],
+#               [4.966884120e+08, -3.147547149e+05, 7.984121880e+01,
+#                -8.414789210e-03, 4.753248350e-07, -1.371873492e-11,
+#                1.605461756e-16, 2.488433516e+06, -6.695728110e+02]
+#               ]
+#     Tmin = [200, 1000, 6000]
+#     Tmax = [1000.007, 6000.007, 20000.007]
+# =============================================================================
     coeffs = [4.078323210e+04, -8.009186040e+02, 8.214702010e+00, 
               -1.269714457e-02, 1.753605076e-05, -1.202860270e-08,
               3.368093490e-12, 2.682484665e+03, -3.043788844e+01]
-    MyCp = NASAPolynomialCp(coeffs=coeffs, MM=2.016, Tmin=200, Tmax=1000)
+    Tmin = 200
+    Tmax = 1000.007
+    
+    MyCp = NASAPolynomialCp(coeffs=coeffs, MM=2.016, Tmin=Tmin, Tmax=Tmax)
     Cp_calc = MyCp.Cp(T, p)
     print(f'{Cp_calc}')
     
@@ -338,7 +392,7 @@ if __name__ == '__main__':
     h_calc = MyH.h(T, p)
     print(f'{h_calc}')
     
-    MyH = NASAPolynomialEnthalpy(coeffs=coeffs, MM=2.016, Tmin=200, Tmax=1000)
+    MyH = NASAPolynomialEnthalpy(coeffs=coeffs, MM=2.016, Tmin=Tmin, Tmax=Tmax)
     h_calc = MyH.h(T, p)
     print(f'{h_calc}')
     
@@ -350,7 +404,7 @@ if __name__ == '__main__':
     s_calc = MyS.s(T, p)
     print(f'{s_calc}')
     
-    MyS = NASAPolynomialEntropy(coeffs=coeffs, MM=2.016, Tmin=200, Tmax=1000)
+    MyS = NASAPolynomialEntropy(coeffs=coeffs, MM=2.016, Tmin=200, Tmin=Tmin, Tmax=Tmax)
     s_calc = MyS.s(T, p)
     print(f'{s_calc}')
     
