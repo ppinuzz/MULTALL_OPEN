@@ -17,7 +17,7 @@ import CoolProp.CoolProp as CP
 from .defaults import THERMO_BACKEND
 import numpy as np
 
-# universal gas constant [J/k*mol]
+# universal gas constant [J/(K*mol)]
 R = 8.31446261815324
 
 # -----------------------------------------------------------------------------
@@ -34,10 +34,7 @@ R = 8.31446261815324
 class CpModel(ABC):
     
     def Cp(self, T: float, p: float | None = None) -> float:
-        if T <= 0:
-            raise ValueError('Temperature must be > 0 K')
-        if p is not None and p <= 0:
-            raise ValueError('Pressure must be > 0 Pa')
+        _validate_Tp(T, p)
         return self._Cp(T, p)
     
     @abstractmethod
@@ -64,6 +61,7 @@ class NASAPolynomialCp(CpModel):
         # use the _ to mark them as private
         # [J/(k*mol)] * [g/mol] = 1000 * [J/(k*mol)] * [kg/mol]
         self._R_mass = 1000 * R / MM
+        # formula from (McBride et al., 2002)
         # TODO: add support for piecewise Cp(T) definition
         self._NASApoly = lambda T: (coeffs[0]/T**2 + coeffs[1]/T + coeffs[2] + 
                                     coeffs[3]*T + coeffs[4]*T**2 + coeffs[5]*T**3 +
@@ -106,10 +104,7 @@ class RealGasCp(CpModel):
 class DensityModel(ABC):
     
     def rho(self, T: float, p: float) -> float:
-        if T <= 0:
-            raise ValueError('Temperature must be > 0 K')
-        if p <= 0:
-            raise ValueError('Pressure must be > 0 Pa')
+        _validate_Tp(T, p)
         return self._rho(T, p)
     
     @abstractmethod
@@ -153,10 +148,7 @@ class RealGasDensity(DensityModel):
 class EnthalpyModel(ABC):
     
     def h(self, T: float, p: float | None = None) -> float:
-        if T <= 0:
-            raise ValueError('Temperature must be > 0 K')
-        if p is not None and p <= 0:
-            raise ValueError('Pressure must be > 0 Pa')
+        _validate_Tp(T, p)
         return self._h(T, p)
     
     @abstractmethod
@@ -182,6 +174,8 @@ class NASAPolynomialEnthalpy(EnthalpyModel):
         # use the _ to mark them as private
         # [J/(k*mol)] * [g/mol] = 1000 * [J/(k*mol)] * [kg/mol]
         self._R_mass = 1000 * R / MM
+        # exact formula from (McBride et al., 2002), obtained from dh = Cp dT
+        # (if Cp = Cp(T) only, then h = h(T) only)
         # TODO: add support for piecewise h(T) definition
         self._NASApoly = lambda T: (-coeffs[0]/T**2 + coeffs[1]*np.log(T)/T + 
                                     coeffs[2] + coeffs[3]*T/2 + coeffs[4]*T**2/3 +
@@ -213,6 +207,14 @@ class RealGasEnthalpy(EnthalpyModel):
         self.FLUID.update(CP.PT_INPUTS, p, T)
         h = self.FLUID.hmass()
         return h
+
+
+def _validate_Tp(T: float, p: float | None = None):
+    if T <= 0:
+        raise ValueError('Temperature must be > 0 K')
+    if p is not None and p <= 0:
+        raise ValueError('Pressure must be > 0 Pa')
+
 
 if __name__ == '__main__':
     T = 300
