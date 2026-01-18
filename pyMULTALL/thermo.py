@@ -309,7 +309,7 @@ if __name__ == '__main__':
     Cp_calc = MyCp_cost.Cp(T, p)
     print(f'{Cp_calc}')
     
-    # 7 Cp(T)/R constants + last h(T)/RT constant + last s(T)/R constant
+    # 7 Cp(T)/R constants + last h(T)/RT constant + last s0(T)/R constant
     coeffs = [4.078323210e+04, -8.009186040e+02, 8.214702010e+00, 
               -1.269714457e-02, 1.753605076e-05, -1.202860270e-08,
               3.368093490e-12, 2.682484665e+03, -3.043788844e+01]
@@ -333,6 +333,7 @@ if __name__ == '__main__':
     rho_calc = MyRho.rho(T, p)
     print(f'{rho_calc}')
     
+    # STILL HAVE TO FIGURE OUT THE REFERENCE STATE 
     MyH = PerfectGasEnthalpy(Cp_perfect=MyCp_cost)
     h_calc = MyH.h(T, p)
     print(f'{h_calc}')
@@ -344,3 +345,15 @@ if __name__ == '__main__':
     MyH = RealGasEnthalpy(fluid='H2')
     h_calc = MyH.h(T, p)
     print(f'{h_calc}')
+    
+    MyS = PerfectGasEntropy(Cp_perfect=MyCp_cost, MM=2.016, p_ref=p_ref_NASA, T_ref=T_ref_NASA)
+    s_calc = MyS.s(T, p)
+    print(f'{s_calc}')
+    
+    MyS = NASAPolynomialEntropy(coeffs=coeffs, MM=2.016, Tmin=200, Tmax=1000)
+    s_calc = MyS.s(T, p)
+    print(f'{s_calc}')
+    
+    MyS = RealGasEntropy(fluid='H2')
+    s_calc = MyS.s(T, p)
+    print(f'{s_calc}')
