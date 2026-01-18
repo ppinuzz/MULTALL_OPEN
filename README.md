@@ -41,7 +41,10 @@ since `'/dev/tty'` doesn't exist on Windows (there are ways to have it patched t
 gfortran -std=legacy -o MEANGEN.exe meangen-17.4.f
 ```
 from within `Denton/multall-open/MEANGEN/meangen-program`
+
 2. Copy the executable `MEANGEN.exe` to `pyMULTALL/bin`
+
+3. (Optional) compile the docs in HTML by running `make html` from within `docs`
 
 
 ## Case structure ##
