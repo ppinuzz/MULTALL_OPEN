@@ -17,3 +17,6 @@ __pycache__/
 *.doc
 *.pdf
 *.pptx
+
+# file where I put all the unfinished bits and notes
+DUMP.txt
