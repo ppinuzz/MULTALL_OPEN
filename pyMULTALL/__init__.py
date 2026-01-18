@@ -24,5 +24,5 @@ from . import auxiliaries
 # (see all the other __init__.py files in the subdirectories of this package)
 
 __version__ = '1.0.1'
-__author__ = ['John Denton', 'Andrea Pinardi']
-__email__ = ['jdd1@cam.ac.uk', 'andrea.pinardi@polimi.it']
+__author__ = ['Andrea Pinardi', 'John Denton']
+__email__ = ['andrea.pinardi@polimi.it', 'jdd1@cam.ac.uk']

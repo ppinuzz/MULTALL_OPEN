@@ -3,13 +3,18 @@
 """
 Thermodynamic utilities.
 
+Check the module by running it with python -m pyMULTALL.thermo
+
 @author: Andrea Pinardi <andrea.pinardi@polimi.it>
 """
 
 from abc import ABC, abstractmethod
 from CoolProp import AbstractState
 import CoolProp.CoolProp as CP
-from defaults import THERMO_BACKEND
+# "import defaults from the same package (i.e. pyMULTALL) as this file"
+# => to be used ONLY within packages, makes them insensitive to package renaming
+# (e.g. from pyMULTALL to pymultall)
+from .defaults import THERMO_BACKEND
 import numpy as np
 
 # universal gas constant [J/k*mol]
