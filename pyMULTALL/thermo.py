@@ -19,6 +19,9 @@ import numpy as np
 
 # universal gas constant [J/(K*mol)]
 R = 8.31446261815324
+# NASA reference state for gases: ideal gas at standard pressure 1 bar
+p_ref_NASA = 1e5        # [Pa]
+T_ref_NASA = 298.15     # [K]
 
 # -----------------------------------------------------------------------------
 #                   SPECIFIC HEAT AT CONSTANT PRESSURE
@@ -56,8 +59,7 @@ class ConstantCp(CpModel):
 class NASAPolynomialCp(CpModel):
 
     def __init__(self, coeffs: list[float], MM: float, Tmin: float | None, Tmax: float | None):
-        if MM <= 0:
-            raise ValueError('Molar mass must be > 0 g/mol')
+        _validate_MM(MM)
         # use the _ to mark them as private
         # [J/(k*mol)] * [g/mol] = 1000 * [J/(k*mol)] * [kg/mol]
         self._R_mass = 1000 * R / MM
@@ -114,8 +116,7 @@ class DensityModel(ABC):
 
 class IdealGasDensity(DensityModel):
     def __init__(self, MM: float):
-        if MM <= 0:
-            raise ValueError('Molar mass must be > 0 g/mol')
+        _validate_MM(MM)
         # use the _ to mark them as private
         # [J/(k*mol)] * [g/mol] = 1000 * [J/(k*mol)] * [kg/mol]
         self._R_mass = 1000 * R / MM
@@ -169,8 +170,7 @@ class PerfectGasEnthalpy(EnthalpyModel):
 class NASAPolynomialEnthalpy(EnthalpyModel):
 
     def __init__(self, coeffs: list[float], MM: float, Tmin: float | None, Tmax: float | None):
-        if MM <= 0:
-            raise ValueError('Molar mass must be > 0 g/mol')
+        _validate_MM(MM)
         # use the _ to mark them as private
         # [J/(k*mol)] * [g/mol] = 1000 * [J/(k*mol)] * [kg/mol]
         self._R_mass = 1000 * R / MM
@@ -209,11 +209,94 @@ class RealGasEnthalpy(EnthalpyModel):
         return h
 
 
+# -----------------------------------------------------------------------------
+#                                   ENTROPY
+# -----------------------------------------------------------------------------
+
+class EntropyModel(ABC):
+    
+    def s(self, T: float, p: float) -> float:
+        _validate_Tp(T, p)
+        return self._s(T, p)
+    
+    @abstractmethod
+    def _s(self, T: float, p: float) -> float:
+        """Model specific entropy implementation [J/(kg*K)]"""
+
+
+class PerfectGasEntropy(EntropyModel):
+    def __init__(self, Cp_perfect: ConstantCp, MM: float, p_ref: float, T_ref: float):
+        _validate_MM(MM)
+        _validate_Tp(T_ref, p_ref)
+        self.Cp_perfect = Cp_perfect
+        self._R_mass = 1000 * R / MM
+        self.T_ref = T_ref
+        self.p_ref = p_ref
+
+    def _s(self, T: float, p: float) -> float:
+        Cp = self.Cp_perfect.Cp(T)
+        s = Cp * np.log(T/self.T_ref) - self._R_mass * np.log(p/self.p_ref)
+        return s
+
+
+class NASAPolynomialEntropy(EntropyModel):
+
+    def __init__(self, coeffs: list[float], MM: float, Tmin: float | None, Tmax: float | None):
+        _validate_MM(MM)
+        # use the _ to mark them as private
+        # [J/(k*mol)] * [g/mol] = 1000 * [J/(k*mol)] * [kg/mol]
+        self._R_mass = 1000 * R / MM
+        # TODO: add support for piecewise h(T) definition
+        self._NASApoly = lambda T: (-0.5*coeffs[0]/T**2 - coeffs[1]/T + 
+                                    coeffs[2]*np.log(T) + coeffs[3]*T + 
+                                    coeffs[4]*T**2/2 + coeffs[5]*T**3/3 + 
+                                    coeffs[6]*T**4/4 + coeffs[8])
+        self.Tmin = Tmin
+        self.Tmax = Tmax
+
+    def _s(self, T: float, p: float) -> float:
+        invalid_temp_message = f'T = {T} K outside NASA validity range [{self.Tmin}, {self.Tmax}]'
+        # short-circuiting: se la prima condizione è falsa, la seconda viene
+        # ignorata (e non darà errore, come invece T < None darebbe)
+        if (self.Tmin is not None and T < self.Tmin) or (self.Tmax is not None and T > self.Tmax):
+            raise ValueError(invalid_temp_message)
+        
+        # from dh = Cp dT = T ds + v dp you can obtain ds = Cp dT/T - v dp/T
+        # which for an ideal gas becomes ds = Cp dT/T - R dp/p
+        # while h = h(T) for an ideal gas, s = s(T, p) even for an ideal gas
+        # but it can be split into 2 components:
+        #   1) an iso-p component Cp dT/T  => tabulated in NASA polynomials
+        #   2) an iso-T component - R dp/P => to be calculated from given p
+        
+        # NASA polynomials are written as s/R = f(T)
+        s0 = self._R_mass * self._NASApoly(T)
+        # s0 is only the portion at constant pressure, the next portion is the
+        # one at constant temperature
+        s_p = - self._R_mass * np.log(p/p_ref_NASA)
+        s = s0 + s_p
+        
+        return s
+
+
+class RealGasEntropy(EntropyModel):
+    def __init__(self, fluid: str):
+        self.FLUID = AbstractState(THERMO_BACKEND, fluid)
+
+    def _s(self, T: float, p: float) -> float:
+        self.FLUID.update(CP.PT_INPUTS, p, T)
+        s = self.FLUID.smass()
+        return s
+
+
 def _validate_Tp(T: float, p: float | None = None):
     if T <= 0:
         raise ValueError('Temperature must be > 0 K')
     if p is not None and p <= 0:
         raise ValueError('Pressure must be > 0 Pa')
+
+def _validate_MM(MM: float):
+    if MM <= 0:
+        raise ValueError('Molar mass must be > 0 g/mol')
 
 
 if __name__ == '__main__':
