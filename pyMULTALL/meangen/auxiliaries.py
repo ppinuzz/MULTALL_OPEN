@@ -3,6 +3,8 @@
 """
 Auxiliary MEANGEN functions.
 
+To test it, run python -m pyMULTALL.meangen.auxiliaries
+
 @author: Andrea Pinardi <andrea.pinardi@polimi.it>
 """
 
@@ -52,6 +54,83 @@ def print_startup_message(len_separator=70):
     #print(format_string.format('Fixed geometry', str(input_data['use_fixed_geometry']), ''))
 
 
+def interactive_input():
+    
+    # ----------------------------- GENERAL DATA -----------------------------
+    input_data = {}
+    machine = input('Is this a compressor (C) or a turbine (T)? ')
+    match machine.lower():
+        case 'c':
+            machine = 'compressor'
+        case 't':
+            machine = 'turbine'
+        case _:
+            raise ValueError(f"Unknown machine '{machine}'")
+    input_data['machine'] = machine
+    
+    flow_type = input('Do you want to design: \n\t AXI) an axial flow machine with a constant radius at a fixed spanwise position on each stage? \n\t MIX) a mixed flow machine with significant changes in radius through the stage? \n')
+    match flow_type.lower():
+        case 'axi':
+            flow_type = 'axial'
+        case 'mix':
+            flow_type = 'mixed'
+        case _:
+            raise ValueError(f"Unknown machine flow type '{flow_type}'")
+    input_data['machine_flow_type'] = flow_type
+    
+    print('Sign conventions: ')
+    print('- The blade rotation must in the positive theta direction')
+    print('- Flow angles are positive is the associated velocity vector has a tangential component in the positive theta direction (i.e. positive rotation direction)')
+    
+    input_data['inlet_conditions'] = {}
+    p_tot_in = float(input('Inlet stagnation pressure [bar]: '))
+    if p_tot_in <= 0:
+        raise ValueError('Pressure cannot be zero or negative')
+    input_data['inlet_conditions']['total_pressure'] = 1e5 * p_tot_in
+    
+    T_tot_in = float(input('Inlet stagnation temperature [K]: '))
+    if T_tot_in <= 0:
+        raise ValueError('Temperature cannot be zero or negative')
+    input_data['inlet_conditions']['total_temperature'] = T_tot_in
+    
+    # TODO: insert gas constants and model
+    
+    N_stages = int(input('Number of stages in the machine: '))
+    if N_stages <= 0:
+        raise ValueError(f'A machine must have at least one stage')
+    input_data['N_stages'] = N_stages
+    
+    ref_radius = input('Which radius do you want to use as a reference for the design: \n\t H) hub \n\t M) midspan \n\t T) tip \n')
+    match ref_radius.lower():
+        case 'h':
+            ref_radius = 'hub'
+        case 'm':
+            ref_radius = 'midspan'
+        case 't':
+            ref_radius = 'tip'
+        case _:
+            raise ValueError(f"Unknown reference radius '{ref_radius}'")
+    input_data['design_point_radius'] = ref_radius
+    
+    rotation_speed = float(input('Rotational speed [rpm]: '))
+    if rotation_speed <= 0:
+        raise ValueError(f'Rotational speed cannot be zero or negative')
+    input_data['rotation_speed'] = rotation_speed
+    
+    mass_flow_rate = float(input('Total mass flow rate [kg/s]: '))
+    if mass_flow_rate <= 0:
+        raise ValueError(f'Mass flow rate cannot be negative')
+    input_data['mass_flow_rate'] = mass_flow_rate
+    
+    
+    # ------------------------------ STAGE DATA ------------------------------
+    # each stage has its number as key, from 1 to N_stages
+    input_data['stages'] = {i for i in range(1, N_stages+1)}
+    for i in range(1, N_stages+1):
+        print(f'Starting stage number {i}')
+    
+    return input_data
+
 
 # ----------------------------- PRIVATE FUNCTIONS -----------------------------
 
@@ -71,3 +150,7 @@ def _title_formatting(title, separator):
         title = title + delta_dashes * '-'
         
     return title
+
+
+if __name__ == '__main__':
+    interactive_input()
