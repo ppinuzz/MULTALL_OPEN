@@ -12,9 +12,9 @@ sys.path.insert(0, os.path.abspath ('../..'))
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
 
 project = 'pyMULTALL'
-copyright = '2026, Andrea Pinardi, John Denton'
-author = 'Andrea Pinardi, John Denton'
-release = '1.0.1'
+copyright = '2026, Andrea Pinardi'
+author = 'Andrea Pinardi'
+release = '0.0.0-alpha'
 
 # -- General configuration ---------------------------------------------------
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration

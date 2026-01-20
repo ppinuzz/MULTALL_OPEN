@@ -23,6 +23,6 @@ from . import auxiliaries
 # b) and then import the MODULES from within each subpackage
 # (see all the other __init__.py files in the subdirectories of this package)
 
-__version__ = '1.0.1'
-__author__ = ['Andrea Pinardi', 'John Denton']
-__email__ = ['andrea.pinardi@polimi.it', 'jdd1@cam.ac.uk']
+__version__ = '0.0.0-alpha'
+__author__ = ['Andrea Pinardi']
+__email__ = ['andrea.pinardi@polimi.it']

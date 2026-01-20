@@ -7,7 +7,7 @@ pyMULTALL documentation
 =======================
 
 **pyMULTALL** is a Python version of John Denton's MULTALL-OPEN Fortran code for
-turbomachinery design [Denton2017]_. The original code is avalilable at 
+turbomachinery design [Denton2017]_. The original code is available at 
 `MULTALL-OPEN <https://sites.google.com/view/multall-turbomachinery-design>`_.
 
 Add your content using ``reStructuredText`` syntax. See the
@@ -16,7 +16,8 @@ documentation for details.
 
 Versions
 --------
-- `1.0.1`: Denton's original code MULTALL-OPEN 20.9, as of 25/11/2025
+- `v0.0.0-alpha`: Translation to Python of Denton's code and extension (WIP)
+- `v0.0.0`: Denton's original code MULTALL-OPEN 20.9, as of 25/11/2025
 
 References
 ----------
