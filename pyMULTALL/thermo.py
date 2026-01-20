@@ -404,7 +404,7 @@ if __name__ == '__main__':
     s_calc = MyS.s(T, p)
     print(f'{s_calc}')
     
-    MyS = NASAPolynomialEntropy(coeffs=coeffs, MM=2.016, Tmin=200, Tmin=Tmin, Tmax=Tmax)
+    MyS = NASAPolynomialEntropy(coeffs=coeffs, MM=2.016, Tmin=Tmin, Tmax=Tmax)
     s_calc = MyS.s(T, p)
     print(f'{s_calc}')
     
