@@ -31,9 +31,9 @@ class OperatingSystem(Enum):
         Apple macOS (Darwin) operating system.
     """
     
-    WINDOWS = 1
-    LINUX = 2
-    MAC = 3
+    WINDOWS = 'windows'
+    LINUX = 'linux'
+    MAC = 'mac'
 
 
 def get_OS_name():
@@ -74,10 +74,16 @@ class GasModel(Enum):
     Members
     -------
     PERFECT
-        Perfect gas model (Cp = const. and ideal gas law).
+        Perfect gas model (:math: `c_p = {{\text{const.}}}` and ideal gas law).
+    IDEAL
+        Ideal gas model (:math: `c_p = c_p(T)` and ideal gas law).
+    REAL
+        Real gas model (:math: `c_p = c_p(T, p)` and real gas relationship).
     """
     
-    PERFECT = 1
+    PERFECT = 'perfect'
+    IDEAL = 'ideal'
+    REAL = 'real'
 
 
 if __name__ == '__main__':
