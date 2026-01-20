@@ -14,6 +14,20 @@ import socket
 import pyMULTALL
 
 def print_startup_message(len_separator=70):
+    """
+    Print startup message with author names, date, version, ecc.
+
+    Parameters
+    ----------
+    len_separator : int, optional
+        Length of the separator string (the char ``-`` repeated more times). 
+        The default is 70.
+
+    Returns
+    -------
+    None.
+
+    """
     
     separator = len_separator * '-'
     title = _title_formatting('pyMULTALL-OPEN', separator)
@@ -55,6 +69,20 @@ def print_startup_message(len_separator=70):
 
 
 def interactive_input():
+    """
+    Ask the user for input interactively.
+
+    Raises
+    ------
+    ValueError
+        If an input parameter has an invalid value.
+
+    Returns
+    -------
+    input_data : dict
+        Input data, as-if read from a ``.yaml`` file.
+
+    """
     
     # ----------------------------- GENERAL DATA -----------------------------
     input_data = {}
