@@ -16,8 +16,197 @@ MEANGEN = PYMULTALL / 'bin'/ 'MEANGEN.exe'
 # last MEANGEN version as of 25/11/2025
 VERSION = '17.4'
 
+@dataclass
+class StageOpts:
+    """
+    Default parameters and options for a machine stage, regardless of machine type.
+    
+    Parameters
+    ----------
+    c_ax_1 : float, optional
+        Axial chord of the 1st row [m]. Default is 0.05 m.
+    c_ax_2 : float, optional
+        Axial chord of the 2nd row [m]. Default is 0.04 m.
+    row_gap2cax : float, optional
+        Gap between blade rows divided by axial chord: :math:`{{\Delta}} z_{rows}/c_{ax}`.
+    stage_gap2cax : float, optional
+        Gap between stages divided by axial chord: :math:`{{\Delta}} z_{stages}/c_{ax}`.
+    delta_1 : float, optional
+        Deviation angle of the 1st row (always > 0) [deg]. Default is 5.0 deg.
+    delta_2 : float, optional
+        Deviation angle of the 2nd row (always > 0) [deg]. Default is 5.0 deg.
+    incidence_1 : float, optional
+        Incidence angle of the 1st row [deg]. Default is -2.0 deg.
+    incidence_2 : float, optional
+        Incidence angle of the 2nd row [deg]. Default is -2.0 deg.
+    eta_iso : float, optional
+        Guessed stage isentropic efficiency. Default is 0.90.
+    blockageLE_1 : float, optional
+        Blockage factor at the 1st blade leading edge. Default is 0.0.
+    blockageTE_2 : float, optional
+        Blockage factor at the 2nd trailing edge. Default is 0.0.
+    
+    """
+    # axial chord [m]
+    c_ax_1: float = 0.05   # row 1
+    c_ax_2: float = 0.04   # row 2
+    # gap between blade rows / axial chord
+    row_gap2cax: float = 0.25
+    # gap between stages / axial chord
+    stage_gap2cax: float = 0.50
+    # deviation angle [deg]
+    delta_1: float = 5.0   # row 1
+    delta_2: float = 5.0   # row 2
+    # incidence angle [deg]
+    incidence_1: float = -2.0   # row 1
+    incidence_2: float = -2.0   # row 2
+    # isentropic efficiency
+    eta_iso: float = 0.90
+    # blockage factor at 1st leading edge
+    blockageLE_1: float = 0.0
+    # blockage factor at 2nd blade trailing edge
+    blockageTE_2: float = 0.0
+
+
+@dataclass
+class NumericGridOpts:
+    """
+    Numerical grid options.
+
+    Parameters
+    ----------
+    N_smooth_stream : int, optional
+        Number of smoothing iterations applied to the stream surface
+        coordinates. Default is 5.
+    smoothing_factor : float, optional
+        Relaxation factor used during stream surface smoothing.
+        Default is 0.1.
+    N_stream_surfs : int, optional
+        Number of stream surfaces to be generated.
+        Default is 3.
+    N_pts_pitch : int, optional
+        Number of grid points in the pitchwise direction.
+        Default is 37.
+    N_pts_span : int, optional
+        Number of grid points in the spanwise direction.
+        Default is 37.
+    N_pts_merid_LE : int, optional
+        Number of meridional grid points upstream of the leading edge.
+        Default is 20.
+    N_pts_merid_blade : int, optional
+        Number of meridional grid points along the blade surface.
+        Default is 70.
+    N_pts_merid_TE : int, optional
+        Number of meridional grid points downstream of the trailing edge.
+        Default is 15.
+    N_pts_extra_before : int, optional
+        Number of additional meridional grid points upstream of the first row.
+        Default is 5.
+    N_pts_extra_after : int, optional
+        Number of additional meridional grid points downstream of the last row.
+        Default is 5.
+    exp_ratio_pitch : float, optional
+        Grid expansion ratio in the pitchwise direction.
+        Default is 1.25.
+    max_exp_ratio_pitch : float, optional
+        Maximum allowed grid expansion ratio in the pitchwise direction.
+        Default is 20.0.
+    exp_ratio_span : float, optional
+        Grid expansion ratio in the spanwise direction.
+        Default is 1.25.
+    max_exp_ratio_span : float, optional
+        Maximum allowed grid expansion ratio in the spanwise direction.
+        Default is 20.0.
+    """
+    # number of smoothing of the stream surface coordinates
+    N_smooth_stream: int = 5
+    # smoothing factor for stream surface smoothing
+    smoothing_factor: float = 0.1
+    # number of stream surfaces to be generated
+    N_stream_surfs: int = 3
+    # number of grid points in pitchwise direction
+    N_pts_pitch: int = 37
+    # number of grid points in spanwise direction
+    N_pts_span: int = 37
+    # number of meridional grid points upstream of the leading edge
+    N_pts_merid_LE: int = 20
+    # number of meridional grid points on the blade
+    N_pts_merid_blade: int = 70
+    # number of meridional grid points behind the trailing edge
+    N_pts_merid_TE: int = 15
+    # number of extra meridional points upstream of the first row
+    N_pts_extra_before: int = 5
+    # number of extra meridional points downstream of the last row
+    N_pts_extra_after: int = 5
+    # grid expansion ratio in pitchwise direction
+    exp_ratio_pitch: float = 1.25
+    # maximum grid expansion ratio in pitchwise direction
+    max_exp_ratio_pitch: float = 20.0
+    # grid expansion ratio in spanwise direction
+    exp_ratio_span: float = 1.25
+    # maximum grid expansion ratio in spanwise direction
+    max_exp_ratio_span: float = 20.0
+
+
 @dataclass 
-class TurbineOpts:
+class TurbineOpts(StageOpts):
+    """
+    Default parameters and options for a turbine stage.
+    
+    Parameters
+    ----------
+    tLE2cax : float, optional
+        Leading-edge thickness divided by axial chord: :math:`t_{LE}/c_{ax}`.
+        Default is 0.04.
+    tTE2cax : float, optional
+        Trailing-edge thickness divided by axial chord: :math:`t_{TE}/c_{ax}`.
+        Default is 0.04.
+    tmax_stat2cax : float, optional
+        Maximum stator blade thickness divided by axial chord: :math:`t_{s,max}/c_{ax}`.
+        Default is 0.30.
+    tmax_rot2cax : float, optional
+        Maximum rotor blade thickness divided by axial chord: :math:`t_{r,max}/c_{ax}`.
+        Default is 0.25.
+    pos_tmax_stat2cax : float, optional
+        Axial position of the stator section with maximum thickness, given as
+        a fraction of the axial chord: :math:`z_{s,max,t}/c_{ax}`.
+        Default is 0.45.
+    pos_tmax_rot2cax : float, optional
+        Axial position of the rotor section with maximum thickness, given as
+        a fraction of the axial chord: :math:`z_{r,max,t}/c_{ax}`.
+        Default is 0.40.
+    pos_modLE2cax : float, optional
+        **"fraction of axial chord over which the leading edge is modified"** ??
+        Default is 0.02.
+    pos_modTE2cax : float, optional
+        **"fraction of axial chord over which the trailing edge is modified"** ??
+        Default is 0.01.
+    Zw : float, optional
+        Zweifel's coefficient. Default is 0.85.
+    exp : float, optional
+        **"Exponent for transforming the axial position. It is used to vary the 
+        camber line shape. increasing expo moves the blade loading upstream."** ??
+        Default is 1.
+    thetaLE2ax_merid_1 : float, optional
+        Angle between the leading edge of the 1st row and the axial direction 
+        in the meridional view [deg].
+        Default is 92.0.
+    thetaLE2ax_merid_2 : float, optional
+        Angle between the leading edge of the 2nd row and the axial direction 
+        in the meridional view [deg].
+        Default is 88.0.
+    thetaTE2ax_merid_1 : float, optional
+        Angle between the trailing edge of the 1st row and the axial direction 
+        in the meridional view [deg].
+        Default is 88.0.
+    thetaTE2ax_merid_2 : float, optional
+        Angle between the trailing edge of the 2nd row and the axial direction 
+        in the meridional view [deg].
+        Default is 92.0.
+    thickness_distribution : int, optional
+        **"Form of blade thickness distribution"** ??
+        Default is 2.
+    """
     # leading edge thickness / axial chord
     tLE2cax: float = 0.04
     # trailing edge thickness / axial chord
@@ -30,23 +219,28 @@ class TurbineOpts:
     pos_tmax_stat2cax: float = 0.45
     # position of the rotor maximum thickness section as a fraction of the axial chord
     pos_tmax_rot2cax: float = 0.40
+    
     # "fraction of axial chord over which the leading edge is modified"
     pos_modLE2cax: float = 0.02
     # "fraction of axial chord over which the trailing edge is modified"
     pos_modTE2cax: float = 0.01
+    
     # Zweifel coefficient
     Zw: float = 0.85
+    
     # "EXPONENT FOR TRANSFORMING THE AXIAL POSITION. IT IS USED TO VARY THE CAMBER 
     #LINE SHAPE. INCREASING EXPO MOVES THE BLADE LOADING UPSTREAM."
     exp: float = 1.0
+    
     # angle between leading edge and axial direction in meridional view
     thetaLE2ax_merid_1: float = 92.0     # row 1
     thetaLE2ax_merid_2: float = 88.0     # row 2
     # angle between trailing edge and axial direction in meridional view
     thetaTE2ax_merid_1: float = 88.0     # row 1
     thetaTE2ax_merid_2: float = 92.0     # row 2
+    
     # "FORM OF BLADE THICKNESS DISTRIBUTION
-    thickness_distribution:int = 2
+    thickness_distribution: int = 2
 
 # =============================================================================
 #   IF(TURBO_TYP.EQ.'T') THEN   !   DEFAULTS FOR TURBINES.
@@ -70,7 +264,67 @@ class TurbineOpts:
 # =============================================================================
 
 @dataclass
-class CompressorOpts:
+class CompressorOpts(StageOpts):
+    """
+    Default parameters and options for a compressor stage.
+    
+    Parameters
+    ----------
+    tLE2cax : float, optional
+        Leading-edge thickness divided by axial chord: :math:`t_{LE}/c_{ax}`.
+        Default is 0.02.
+    tTE2cax : float, optional
+        Trailing-edge thickness divided by axial chord: :math:`t_{TE}/c_{ax}`.
+        Default is 0.01.
+    tmax_stat2cax : float, optional
+        Maximum stator blade thickness divided by axial chord: :math:`t_{s,max}/c_{ax}`.
+        Default is 0.10.
+    tmax_rot2cax : float, optional
+        Maximum rotor blade thickness divided by axial chord: :math:`t_{r,max}/c_{ax}`.
+        Default is 0.075.
+    pos_tmax_stat2cax : float, optional
+        Axial position of the stator section with maximum thickness, given as
+        a fraction of the axial chord: :math:`z_{s,max,t}/c_{ax}`.
+        Default is 0.45.
+    pos_tmax_rot2cax : float, optional
+        Axial position of the rotor section with maximum thickness, given as
+        a fraction of the axial chord: :math:`z_{r,max,t}/c_{ax}`.
+        Default is 0.40.
+    pos_modLE2cax : float, optional
+        **"fraction of axial chord over which the leading edge is modified"** ??
+        Default is 0.02.
+    pos_modTE2cax : float, optional
+        **"fraction of axial chord over which the trailing edge is modified"** ??
+        Default is 0.01.
+    Zw : float, optional
+        Zweifel's coefficient. Default is 0.50.
+    diffusion_factor : float, optional
+        Diffusion factor for compressors, **NOT USED NOW??**.
+        Default is 0.35.
+    exp : float, optional
+        **"Exponent for transforming the axial position. It is used to vary the 
+        camber line shape. increasing expo moves the blade loading upstream."** ??
+        Default is 1.
+    thetaLE2ax_merid_1 : float, optional
+        Angle between the leading edge of the 1st row and the axial direction 
+        in the meridional view [deg].
+        Default is 88.0.
+    thetaLE2ax_merid_2 : float, optional
+        Angle between the leading edge of the 2nd row and the axial direction 
+        in the meridional view [deg].
+        Default is 92.0.
+    thetaTE2ax_merid_1 : float, optional
+        Angle between the trailing edge of the 1st row and the axial direction 
+        in the meridional view [deg].
+        Default is 92.0.
+    thetaTE2ax_merid_2 : float, optional
+        Angle between the trailing edge of the 2nd row and the axial direction 
+        in the meridional view [deg].
+        Default is 88.0.
+    thickness_distribution : int, optional
+        **"Form of blade thickness distribution"** ??
+        Default is 2.
+    """
     # leading edge thickness / axial chord
     tLE2cax: float = 0.02
     # trailing edge thickness / axial chord
@@ -134,61 +388,27 @@ class CompressorOpts:
 # =============================================================================
 
 
-gas_props = GasModel.PERFECT
-# gas constant [J/kgK] (default: air)
-R_gas = 287.15
-# gas specific heat ratio Cp/Cv (default: air)
-gamma_gas = 1.40
+@dataclass
+class GasModelOpts:
+    """
+    Options for the gas thermodynamic model.
+    
+    
+    Parameters
+    ----------
+    gas_model : GasModel, optional
+        Gas model.
+    R : float, optional
+        Massic gas constant [J/(kgK)]. Default is 287.15 J/kgK.
+    gamma : float, optional
+        Specific heat ratio :math:`c_p/c_v`. Default is 1.40.
+    """
+    gas_model: GasModel = GasModel.PERFECT
+    # gas constant [J/kgK] (default: air)
+    R: float = 287.15
+    # gas specific heat ratio Cp/Cv (default: air)
+    gamma: float = 1.40
 
-# axial chord [m]
-c_ax_1 = 0.05   # row 1
-c_ax_2 = 0.04   # row 2
-# gap between blade rows / axial chord
-row_gap2cax = 0.25
-# gap between stages / axial chord
-stage_gap2cax = 0.50
-# deviation angle [deg]
-delta_1 = 5.0   # row 1
-delta_1 = 5.0   # row 2
-# incidence angle [deg]
-incidence_1 = -2.0   # row 1
-incidence_2 = -2.0   # row 2
-# isentropic efficiency
-eta_iso = 0.90
-# number of smoothing of the stream surface coordinates
-N_smooth_stream = 5
-# smoothing factor for stream surface smoothing
-smoothing_factor = 0.1
-# blockage factor at 1st leading edge
-blockageLE_1 = 0.0
-# blockage factor at 2nd blade trailing edge
-blockageTE_2 = 0.0
-
-# number of stream surfaces to be generated
-N_stream_surfs = 3
-# number of grid points in pitchwise direction
-N_pts_pitch = 37
-# number of grid points in spanwise direction
-N_pts_span = 37
-# number of meridional grid points upstream of the leading edge
-N_pts_merid_LE = 20
-# number of meridional grid points on the blade
-N_pts_merid_blade = 70
-# number of meridional grid points behind the trailing edge
-N_pts_merid_TE = 15
-# number of extra meridional points upstream of row 1
-N_pts_extra_before = 5
-# number of extra meridional points downstream of the last row
-N_pts_extra_after = 5
-
-# grid expansion ratio in pitchwise direction
-exp_ratio_pitch = 1.25
-# maximum grid expansion ratio in pitchwise direction
-max_exp_ratio_pitch = 20.0
-# grid expansion ratio in spanwise direction
-exp_ratio_span = 1.25
-# maximum grid expansion ratio in spanwise direction
-max_exp_ratio_span = 20.0
 
 # =============================================================================
 # IPROPS     = 1       ! USE PERFECT GAS PROPERTIES. 
