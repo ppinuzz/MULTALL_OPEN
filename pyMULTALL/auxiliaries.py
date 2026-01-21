@@ -74,11 +74,11 @@ class GasModel(Enum):
     Members
     -------
     PERFECT
-        Perfect gas model (:math: `c_p = {{\text{const.}}}` and ideal gas law).
+        Perfect gas model (:math:`c_p =` const. and ideal gas law).
     IDEAL
-        Ideal gas model (:math: `c_p = c_p(T)` and ideal gas law).
+        Ideal gas model (:math:`c_p = c_p(T)` and ideal gas law).
     REAL
-        Real gas model (:math: `c_p = c_p(T, p)` and real gas relationship).
+        Real gas model (:math:`c_p = c_p(T, p)` and real gas relationship).
     """
     
     PERFECT = 'perfect'
