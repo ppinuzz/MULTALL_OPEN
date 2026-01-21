@@ -30,6 +30,10 @@ def print_startup_message(len_separator=70):
 
     """
     
+    # make ANSI colours work on Windows without installing anything else
+    # (does nothing on other OSs)
+    just_fix_windows_console()
+    
     separator = len_separator * '-'
     title = _title_formatting('pyMULTALL-OPEN', separator)
     
@@ -96,7 +100,7 @@ def interactive_input():
     
     # ----------------------------- GENERAL DATA -----------------------------
     input_data = {}
-    machine = input('Is this a compressor (C) or a turbine (T)? ')
+    machine = input('Is this a compressor or a turbine? [c/t]')
     match machine.lower():
         case 'c':
             machine = 'compressor'
@@ -131,11 +135,49 @@ def interactive_input():
         raise ValueError('Temperature cannot be zero or negative')
     input_data['inlet_conditions']['total_temperature'] = T_tot_in
     
-    # TODO: insert gas constants and model
+    input_data['gas_properties'] = {}
+    gas_model = input('Gas model: \n\t P) perfect \n\t I) ideal \n\t R) real \n\t U) user-defined')
+    match gas_model.lower():
+        case 'p':
+            gas_model = pyMULTALL.auxiliaries.GasModel.PERFECT
+        case 'i':
+            gas_model = pyMULTALL.auxiliaries.GasModel.IDEAL
+        case 'r':
+            gas_model = pyMULTALL.auxiliaries.GasModel.REAL
+        case 'u':
+            gas_model = pyMULTALL.auxiliaries.GasModel.USER_DEFINED
+            raise NotImplementedError('User-defined gas models are not ready yet!')
+        case _:
+            raise ValueError('Unknown gas model')
+    input_data['gas_properties']['model'] = gas_model
+    
+    # some of the following properties are not always needed/well-defined,
+    # depending on the model
+    if gas_model != pyMULTALL.auxiliaries.GasModel.REAL:
+        R_gas = float(input('Massic gas constant [J/(kgK)]: '))
+        if R_gas <= 0:
+            raise ValueError('Massic gas constant cannot be zero or negative')
+    else:
+        R_gas = None
+    input_data['gas_properties']['gas_constant'] = R_gas
+    
+    if gas_model == pyMULTALL.auxiliaries.GasModel.PERFECT:
+        gamma_pv = float(input('Specific heat ratio Cp/Cv (i.e. gamma_pv): '))
+        if gamma_pv <= 0:
+            raise ValueError('Specific heat ratio (gamma_pv) cannot be zero or negative')
+    else:
+        gamma_pv = None
+    input_data['gas_properties']['gamma'] = gamma_pv
+    
+    if gas_model == pyMULTALL.auxiliaries.GasModel.REAL:
+        fluid = input('Fluid name (as in the thermodynamic backend): ')
+    else:
+        fluid = None
+    input_data['gas_properties']['fluid'] = fluid
     
     N_stages = int(input('Number of stages in the machine: '))
     if N_stages <= 0:
-        raise ValueError(f'A machine must have at least one stage')
+        raise ValueError('A machine must have at least one stage')
     input_data['N_stages'] = N_stages
     
     ref_radius = input('Which radius do you want to use as a reference for the design: \n\t H) hub \n\t M) midspan \n\t T) tip \n')
@@ -152,20 +194,54 @@ def interactive_input():
     
     rotation_speed = float(input('Rotational speed [rpm]: '))
     if rotation_speed <= 0:
-        raise ValueError(f'Rotational speed cannot be zero or negative')
+        raise ValueError('Rotational speed cannot be zero or negative')
     input_data['rotation_speed'] = rotation_speed
     
     mass_flow_rate = float(input('Total mass flow rate [kg/s]: '))
     if mass_flow_rate <= 0:
-        raise ValueError(f'Mass flow rate cannot be negative')
+        raise ValueError('Mass flow rate cannot be negative')
     input_data['mass_flow_rate'] = mass_flow_rate
     
     
     # ------------------------------ STAGE DATA ------------------------------
     # each stage has its number as key, from 1 to N_stages
-    input_data['stages'] = {i for i in range(1, N_stages+1)}
+    input_data['stages'] = {i: None for i in range(1, N_stages+1)}
     for i in range(1, N_stages+1):
+        stage_data = {}
         print(f'Starting stage number {i}')
+        
+        if i > 1:
+            equal_stage = print('Are the angles, mass flow rate, design radius, isentropic efficiency, etc. for this stage the same as for the previous stage [y/n]?')
+            match equal_stage.lower():
+                case 'y':
+                    equal_stage = True
+                case 'n':
+                    equal_stage = False
+                case _:
+                    raise ValueError(f"Unknown answer '{equal_stage}'")
+        else:
+            # if this is the 1st stage, there's not prior stage that can be
+            # equal to this one
+            equal_stage = False
+        
+        if flow_type == 'axial':
+            flow_new = 'mixed'
+        else:
+            flow_new = 'axial'
+        change_flow_stage = input('Do you want to change this stage from a(n) {flow_type} flow stage to a(n) {flow_new} flow stage [y/n]?')
+        match change_flow_stage.lower():
+            case 'y':
+                change_flow_stage = True
+                #input_data['stages'][i] = 
+            case 'n':
+                change_flow_stage = False
+            case _:
+                raise ValueError(f"Unknown answer '{change_flow_stage}'")
+        raise NotImplementedError('Ma dello stadio singolo o della macchina intera?')
+        
+        
+        # .copy() to avoid shallow copying it and changing it
+        input_data['stages'][i] = stage_data.copy()
     
     return input_data
 
