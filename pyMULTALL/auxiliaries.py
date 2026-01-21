@@ -79,11 +79,14 @@ class GasModel(Enum):
         Ideal gas model (:math:`c_p = c_p(T)` and ideal gas law).
     REAL
         Real gas model (:math:`c_p = c_p(T, p)` and real gas relationship).
+    USER_DEFINED
+        User-defined (not implemented yet).
     """
     
     PERFECT = 'perfect'
     IDEAL = 'ideal'
     REAL = 'real'
+    USER_DEFINED = 'user_defined'
 
 
 if __name__ == '__main__':
