@@ -12,6 +12,7 @@ import datetime
 import platform
 import socket
 import pyMULTALL
+from colorama import just_fix_windows_console, Fore, Style
 
 def print_startup_message(len_separator=70):
     """
@@ -36,8 +37,10 @@ def print_startup_message(len_separator=70):
     print(title)
     print(separator)
     
-    print(f'Original author         : {pyMULTALL.__author__[0]:15s}  {pyMULTALL.__email__[0]}')
-    print(f'Python code author      : {pyMULTALL.__author__[1]:15s}  {pyMULTALL.__email__[1]}')
+    original_author_name = 'John D. Denton'
+    original_author_email = 'jdd1@cam.ac.uk'
+    print(f'Original author         : {original_author_name:15s}  {original_author_email}')
+    print(f'Python code author      : {pyMULTALL.__author__[0]:15s}  {pyMULTALL.__email__[0]}')
     print(f'Version                 : {pyMULTALL.__version__}')
     print(separator)
     # https://stackoverflow.com/a/18944849/17220538
@@ -50,7 +53,14 @@ def print_startup_message(len_separator=70):
     print('MEANGEN will create a mean-line design dataset used as input to the '
           'blade design program STAGEN, which in turn will create a 3D dataset '
           'for the MULTALL-OPEN program')
-    #print(f'Thermodynamic backend : {REFPROP_path}')
+    print(separator)
+    print(f'Thermodynamic backend (for real gas model) : {pyMULTALL.defaults.THERMO_BACKEND}')
+    if pyMULTALL.defaults.THERMO_BACKEND == 'REFPROP':
+        if pyMULTALL.defaults.REFPROP_PATH is not None:
+            # coloured text in terminal 
+            # https://stackoverflow.com/a/3332860/17220538
+            print(Fore.YELLOW + "No environmental variable 'RPPREFIX' was found, CoolProp may not be able to load REFPROP" + Style.RESET_ALL)
+        print(f'REFPROP path : {pyMULTALL.defaults.REFPROP_PATH}')
     #print(separator)
     #print(f'Input file       : {input_file}')
     #print(f'Output directory : {output_dir}')
