@@ -47,19 +47,19 @@ class StageOpts:
         Blockage factor at the 2nd trailing edge. Default is 0.0.
     
     """
-    # axial chord [m]
-    c_ax_1: float = 0.05   # row 1
-    c_ax_2: float = 0.04   # row 2
+    # axial chord in row 1 and 2 [m]
+    c_ax_1: float = 0.05
+    c_ax_2: float = 0.04
     # gap between blade rows / axial chord
     row_gap2cax: float = 0.25
     # gap between stages / axial chord
     stage_gap2cax: float = 0.50
-    # deviation angle [deg]
-    delta_1: float = 5.0   # row 1
-    delta_2: float = 5.0   # row 2
-    # incidence angle [deg]
-    incidence_1: float = -2.0   # row 1
-    incidence_2: float = -2.0   # row 2
+    # deviation angle in row 1 and 2 [deg]
+    delta_1: float = 5.0
+    delta_2: float = 5.0
+    # incidence angle in row 1 and 2 [deg]
+    incidence_1: float = -2.0
+    incidence_2: float = -2.0
     # isentropic efficiency
     eta_iso: float = 0.90
     # blockage factor at 1st leading edge
