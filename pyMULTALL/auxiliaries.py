@@ -104,6 +104,8 @@ class MessageLevel(Enum):
         White (for black terminal) for basic messages and I/O.
     SUCCESS
         Bright green success messages.
+    INFO
+        Bright cyan information message (to attract user's attention).
     """
     
     # 2nd value is whether to use Style.BRIGHT or not
@@ -113,6 +115,7 @@ class MessageLevel(Enum):
     WARNING = (Fore.YELLOW, False)
     BASIC = (Fore.WHITE, True)
     SUCCESS = (Fore.GREEN, True)
+    INFO = (Fore.CYAN, True)
 
 
 def print_message(message, level=MessageLevel.BASIC):
@@ -148,4 +151,4 @@ if __name__ == '__main__':
     my_OS = get_OS_name()
     
     x = 12
-    print_message(f'This x = {x} is a test, as {x**2} is', level=MessageLevel.SUCCESS)
+    print_message(f'This x = {x} is a test, as {x**2} is', level=MessageLevel.INFO)

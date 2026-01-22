@@ -33,7 +33,7 @@ def meangen(case_dir, Fortran=True, input_file=False):
 
 
         if aux.get_OS_name() == aux.OperatingSystem.WINDOWS:
-            subprocess.Popen(
+            meangen_process = subprocess.Popen(
                 # run MEANGEN executable through Windows' CMD, keeping the terminal 
                 # window open (/k) after MEANGEN has terminated the execution
                 ['cmd.exe', '/k', str(MEANGEN_EXE.resolve())],
@@ -43,9 +43,10 @@ def meangen(case_dir, Fortran=True, input_file=False):
                 # (required by MEANGEN)
                 cwd=case_dir.resolve()
             )
+            aux.print_message('Close MEANGEN terminal window to resume parent proces...', aux.MessageLevel.INFO)
+            meangen_process.wait()
     else:
         
         # TODO: rea data from input file
         
         raise NotImplementedError('Python version of MEANGEN is not implemented yet')
-    
