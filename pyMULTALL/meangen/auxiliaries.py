@@ -105,7 +105,10 @@ def interactive_input():
             raise ValueError(f"Unknown machine '{machine}'")
     input_data['machine'] = machine
     
-    flow_type = input('Do you want to design: \n\t AXI) an axial flow machine with a constant radius at a fixed spanwise position on each stage? \n\t MIX) a mixed flow machine with significant changes in radius through the stage? \n')
+    flow_type = input('Do you want to design: '
+                      '\n\t AXI) an axial flow machine with a constant radius at a fixed spanwise position on each stage?' 
+                      '\n\t MIX) a mixed flow machine with significant changes in radius through the stage? \n'
+                      'Machine flow type [axi/mix]: ')
     match flow_type.lower():
         case 'axi':
             flow_type = 'axial'
@@ -131,7 +134,12 @@ def interactive_input():
     input_data['inlet_conditions']['total_temperature'] = T_tot_in
     
     input_data['gas_properties'] = {}
-    gas_model = input('Gas model: \n\t P) perfect \n\t I) ideal \n\t R) real \n\t U) user-defined')
+    gas_model = input('Gas model:'
+                      '\n\t P) perfect' 
+                      '\n\t I) ideal' 
+                      '\n\t R) real'
+                      '\n\t U) user-defined \n'
+                      'Selected gas model [p/i/r/u]: ')
     match gas_model.lower():
         case 'p':
             gas_model = pyMULTALL.auxiliaries.GasModel.PERFECT
@@ -175,7 +183,11 @@ def interactive_input():
         raise ValueError('A machine must have at least one stage')
     input_data['N_stages'] = N_stages
     
-    ref_radius = input('Which radius do you want to use as a reference for the design: \n\t H) hub \n\t M) midspan \n\t T) tip \n')
+    ref_radius = input('Which radius do you want to use as a reference for the design:'
+                       '\n\t H) hub'
+                       '\n\t M) midspan'
+                       '\n\t T) tip \n'
+                       'Reference radius [h/m/t]: ')
     match ref_radius.lower():
         case 'h':
             ref_radius = 'hub'
@@ -218,22 +230,104 @@ def interactive_input():
             # if this is the 1st stage, there's not prior stage that can be
             # equal to this one
             equal_stage = False
+        stage_data['equal_stage'] = equal_stage
         
+        # TODO: not yet 100% sure I got this...
         if flow_type == 'axial':
             flow_new = 'mixed'
         else:
             flow_new = 'axial'
-        change_flow_stage = input('Do you want to change this stage from a(n) {flow_type} flow stage to a(n) {flow_new} flow stage [y/n]?')
+        change_flow_stage = input(f'Do you want to change this stage from a(n) {flow_type} flow stage to a(n) {flow_new} flow stage [y/n]?')
         match change_flow_stage.lower():
             case 'y':
                 change_flow_stage = True
-                #input_data['stages'][i] = 
+                stage_flow_type = flow_new
             case 'n':
                 change_flow_stage = False
+                stage_flow_type = flow_type
             case _:
                 raise ValueError(f"Unknown answer '{change_flow_stage}'")
-        raise NotImplementedError('Ma dello stadio singolo o della macchina intera?')
+        stage_data['stage_flow_type'] = stage_flow_type
         
+        
+        # MIXED FLOW STAGE PARAMETERS
+        if flow_type == 'mixed':
+            input_method = input('For MIXED flow machines, two input methods are available: '
+                                 '\n\t A) input all 4 blade angles'
+                                 '\n\t B) input the absolute flow angles at stage inlet and outlet and the flow coefficient (phi) and stage loading coefficient (psi)'
+                                 '\n Design method [a/b]: ')
+            match input_method.lower():
+                case 'a':
+                    input_method = 'blade_angles'
+                case 'b':
+                    input_method = 'angles_phi_psi'
+                case _:
+                    raise ValueError(f"Unknown input method '{input_method}'")
+            stage_data['input_method'] = input_method
+            
+            match input_method:
+                case 'blade_angles':
+                    alpha_in_stat = float(input('Stator inlet flow angle [deg]: '))
+                    if abs(alpha_in_stat) > 90:
+                        raise ValueError('All flow angles must lie in the range [-90, +90] deg')
+                    stage_data['alpha_stator_in'] = alpha_in_stat
+                    
+                    alpha_out_stat = float(input('Stator outlet flow angle [deg]: '))
+                    if abs(alpha_out_stat) > 90:
+                        raise ValueError('All flow angles must lie in the range [-90, +90] deg')
+                    stage_data['alpha_stator_out'] = alpha_out_stat
+                    
+                    beta_in_rot = float(input('Rotor relative inlet flow angle [deg]: '))
+                    if abs(beta_in_rot) > 90:
+                        raise ValueError('All flow angles must lie in the range [-90, +90] deg')
+                    stage_data['beta_rotor_in'] = beta_in_rot
+                    
+                    beta_out_rot = float(input('Rotor relative outlet flow angle [deg]: '))
+                    if abs(beta_out_rot) > 90:
+                        raise ValueError('All flow angles must lie in the range [-90, +90] deg')
+                    stage_data['beta_rotor_out'] = beta_out_rot
+                case 'angles_phi_psi':
+                    if i == 1:
+                        phi_first_rot_LE = float(input('Flow coefficient at the 1st rotor leading edge: '))
+                        if phi_first_rot_LE <= 0:
+                            raise ValueError('Flow coefficient cannot be zero or negative')
+                        stage_data['phi_first_rotor_LE'] = phi_first_rot_LE
+                
+                    alpha_in_stage = float(input('Stage inlet absolute flow angle [deg]: '))
+                    if abs(alpha_in_stage) > 90:
+                        raise ValueError('All flow angles must lie in the range [-90, +90] deg')
+                    stage_data['alpha_in_stage'] = alpha_in_stage
+                    
+                    alpha_out_stage = float(input('Stage outlet absolute flow angle [deg]: '))
+                    if abs(alpha_out_stage) > 90:
+                        raise ValueError('All flow angles must lie in the range [-90, +90] deg')
+                    stage_data['alpha_out_stage'] = alpha_out_stage
+                    
+                    psi_stage = float(input('Stage loading coefficient based on blade speed ar rotor leading edge: '))
+                    if abs(psi_stage) < 0:
+                        raise ValueError('The stage loading coefficient cannot be zero or negative')
+                    stage_data['psi_rotor_LE'] = psi_stage
+            
+            # "mesh numerics"
+            print('Input the stream surface coordinates and the meridional velocity ratios')
+            print('The new values must form a smooth continuation of the last stream surface')
+            if i == 0:
+                N_pts_stream_surf = float(input('Number of points (i.e. axial coordinates) on the mean stream surface: '))
+            else:
+                use_old_points_number = input("The previous mean stream surface had {input_data['stages'][i-1]['N_points_stream_surface']} points on it, do you want to use that same number of points now [y/n]?")
+                match use_old_points_number.lower():
+                    case 'y':
+                        N_pts_stream_surf = input_data['stages'][i-1]['N_points_stream_surface']
+                    case 'n':
+                        N_pts_stream_surf = float(input('Number of points (i.e. axial coordinates) on the mean stream surface: '))
+                    case _:
+                        raise ValueError(f"Unknown answer '{use_old_points_number}'")
+            if N_pts_stream_surf <= 0:
+                raise ValueError('The number of points on the mean stream surface cannot be zero or negative')
+            stage_data['N_points_stream_surface'] = N_pts_stream_surf
+            
+            
+            
         
         # .copy() to avoid shallow copying it and changing it
         input_data['stages'][i] = stage_data.copy()
