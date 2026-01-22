@@ -12,7 +12,7 @@ import datetime
 import platform
 import socket
 import pyMULTALL
-from colorama import just_fix_windows_console, Fore, Style
+import pyMULTALL.auxiliaries as aux
 
 def print_startup_message(len_separator=70):
     """
@@ -29,10 +29,6 @@ def print_startup_message(len_separator=70):
     None.
 
     """
-    
-    # make ANSI colours work on Windows without installing anything else
-    # (does nothing on other OSs)
-    just_fix_windows_console()
     
     separator = len_separator * '-'
     title = _title_formatting('pyMULTALL-OPEN', separator)
@@ -60,12 +56,11 @@ def print_startup_message(len_separator=70):
     print(separator)
     print(f'Thermodynamic backend (for real gas model) : {pyMULTALL.defaults.THERMO_BACKEND}')
     if pyMULTALL.defaults.THERMO_BACKEND == 'REFPROP':
-        if pyMULTALL.defaults.REFPROP_PATH is not None:
-            # coloured text in terminal 
-            # https://stackoverflow.com/a/3332860/17220538
-            print(Fore.YELLOW + "No environmental variable 'RPPREFIX' was found, CoolProp may not be able to load REFPROP" + Style.RESET_ALL)
-        print(f'REFPROP path : {pyMULTALL.defaults.REFPROP_PATH}')
-    #print(separator)
+        if pyMULTALL.defaults.REFPROP_PATH is None:
+            aux.print_message("No environmental variable 'RPPREFIX' was found, CoolProp may not be able to load REFPROP", aux.MessageLevel.BASIC)
+        else:
+            print(f'REFPROP path : {pyMULTALL.defaults.REFPROP_PATH}')
+    print(separator)
     #print(f'Input file       : {input_file}')
     #print(f'Output directory : {output_dir}')
     #print(f'Log file         : {log_file}')

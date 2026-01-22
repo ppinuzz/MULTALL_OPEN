@@ -10,9 +10,13 @@ import subprocess
 
 import pyMULTALL.meangen as pymeangen
 import pyMULTALL.auxiliaries as aux
-
+from colorama import just_fix_windows_console
 
 def meangen(case_dir, Fortran=True, input_file=False):
+    
+    # make ANSI colours work on Windows without installing anything else
+    # (does nothing on other OSs)
+    just_fix_windows_console()
     
     pymeangen.auxiliaries.print_startup_message()
     

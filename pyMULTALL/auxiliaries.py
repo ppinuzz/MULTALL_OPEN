@@ -8,6 +8,7 @@ General auxiliary functions and objects, not related to a specific (sub)program.
 
 import platform
 from enum import Enum
+from colorama import Fore, Style
 
 
 # create a custom exception to make the error message more meaningful
@@ -89,5 +90,62 @@ class GasModel(Enum):
     USER_DEFINED = 'user_defined'
 
 
+class MessageLevel(Enum):
+    """
+    Enumeration of message formatting styles.
+    
+    Members
+    -------
+    ERROR
+        Bright red error messages.
+    WARNING
+        Yellow warning messages.
+    BASIC
+        White (for black terminal) for basic messages and I/O.
+    SUCCESS
+        Bright green success messages.
+    """
+    
+    # 2nd value is whether to use Style.BRIGHT or not
+    # use bright red and bright green to have Spyder's red and green
+    # (basic ones are hardly readable, the same goes for white)
+    ERROR = (Fore.RED, True)
+    WARNING = (Fore.YELLOW, False)
+    BASIC = (Fore.WHITE, True)
+    SUCCESS = (Fore.GREEN, True)
+
+
+def print_message(message, level=MessageLevel.BASIC):
+    """
+    Helper to print user messages coloured based on their level.
+
+    Parameters
+    ----------
+    message : str
+        Message text, can be an f-string.
+    level : MessageLevel, optional
+        Message level controlling its colour. The default is MessageLevel.BASIC.
+
+    Returns
+    -------
+    None.
+
+    """
+    
+    color, bright = level.value
+    if bright:
+        style = Style.BRIGHT
+    else:
+        # empty string gets appended => no effect
+        style = ''
+    
+    # Style.RESET_ALL stops subsequent text from being affected by these
+    # color setups
+    print(color + style + f'{message}' + Style.RESET_ALL)
+
+
 if __name__ == '__main__':
     my_OS = get_OS_name()
+    
+    x = 12
+    print_message(f'This x = {x} is a test, as {x**2} is', level=MessageLevel.SUCCESS)
