@@ -13,6 +13,8 @@ import platform
 import socket
 import pyMULTALL
 import pyMULTALL.auxiliaries as aux
+import pyMULTALL.meangen.defaults as meangen_def
+from prettytable import PrettyTable
 
 def print_startup_message(len_separator=70):
     """
@@ -126,6 +128,7 @@ def interactive_input():
     p_tot_in = float(input('Inlet stagnation pressure [bar]: '))
     if p_tot_in <= 0:
         raise ValueError('Pressure cannot be zero or negative')
+    # convert from bar to Pa
     input_data['inlet_conditions']['total_pressure'] = 1e5 * p_tot_in
     
     T_tot_in = float(input('Inlet stagnation temperature [K]: '))
@@ -211,6 +214,8 @@ def interactive_input():
     
     
     # ------------------------------ STAGE DATA ------------------------------
+    # stage default values for some parameters
+    stage_default = meangen_def.StageOpts()
     # each stage has its number as key, from 1 to N_stages
     input_data['stages'] = {i: None for i in range(1, N_stages+1)}
     for i in range(1, N_stages+1):
@@ -248,6 +253,7 @@ def interactive_input():
             case _:
                 raise ValueError(f"Unknown answer '{change_flow_stage}'")
         stage_data['stage_flow_type'] = stage_flow_type
+        stage_data['change_flow_type'] = change_flow_stage
         
         
         # MIXED FLOW STAGE PARAMETERS
@@ -308,27 +314,153 @@ def interactive_input():
                         raise ValueError('The stage loading coefficient cannot be zero or negative')
                     stage_data['psi_rotor_LE'] = psi_stage
             
-            # "mesh numerics"
-            print('Input the stream surface coordinates and the meridional velocity ratios')
-            print('The new values must form a smooth continuation of the last stream surface')
-            if i == 0:
-                N_pts_stream_surf = float(input('Number of points (i.e. axial coordinates) on the mean stream surface: '))
-            else:
-                use_old_points_number = input("The previous mean stream surface had {input_data['stages'][i-1]['N_points_stream_surface']} points on it, do you want to use that same number of points now [y/n]?")
-                match use_old_points_number.lower():
+            # STREAM SURFACE MESH NUMERICS
+            # (while loop because in the original MEANGEN.17.4.f you were given
+            # the possibility to change the stream surface coordinates after 
+            # having given them, in case you made a mistake)
+            change_stream_surf_coords = True
+            while change_stream_surf_coords:
+                print('Input the stream surface coordinates and the meridional velocity ratios')
+                print('The new values must form a smooth continuation of the last stream surface')
+                if i == 0:
+                    N_pts_stream_surf = float(input('Number of points (i.e. axial coordinates) on the mean stream surface: '))
+                else:
+                    use_old_points_number = input("The previous mean stream surface had {input_data['stages'][i-1]['N_points_stream_surface']} points on it, do you want to use that same number of points now [y/n]?")
+                    match use_old_points_number.lower():
+                        case 'y':
+                            N_pts_stream_surf = input_data['stages'][i-1]['N_points_stream_surface']
+                        case 'n':
+                            N_pts_stream_surf = float(input('Number of points (i.e. axial coordinates) on the mean stream surface: '))
+                        case _:
+                            raise ValueError(f"Unknown answer '{use_old_points_number}'")
+                if N_pts_stream_surf <= 0:
+                    raise ValueError('The number of points on the mean stream surface cannot be zero or negative')
+                stage_data['N_points_stream_surface'] = N_pts_stream_surf
+                
+                if i > 0:
+                    print(f"Axial coordinates of the stream surface of the previous stage [m]: {input_data['stages'][i-1]['stream_surf_axial_coords']}")
+                    use_old_axial_stream_coords = input('Use the axial stream surface coordinates of the previous stage also in this stage [y/n]? ')
+                    match use_old_axial_stream_coords.lower():
+                        case 'y':
+                            axial_stream_coords = input_data['stages'][i-1]['stream_surf_axial_coords'].copy()
+                        case 'n':
+                            # returns a string '0.5 0.6 07' => split at spaces...
+                            axial_stream_coords = input('Axial coordinates of the mean stream surface (space-separated) [m]: ').split()
+                            # ... and turn each piece in a float
+                            axial_stream_coords = list(map(float, axial_stream_coords))
+                        case _:
+                            raise ValueError(f"Unknown answer '{use_old_axial_stream_coords}'")
+                
+                if i > 0:
+                    print(f"Radial coordinates of the stream surface of the previous stage [m]: {input_data['stages'][i-1]['stream_surf_radial_coords']}")
+                    use_old_radial_stream_coords = input('Use the radial stream surface coordinates of the previous stage also in this stage [y/n]? ')
+                    match use_old_radial_stream_coords.lower():
+                        case 'y':
+                            radial_stream_coords = input_data['stages'][i-1]['stream_surf_radial_coords'].copy()
+                        case 'n':
+                            # returns a string '0.5 0.6 07' => split at spaces...
+                            radial_stream_coords = input('Radial coordinates of the mean stream surface (space-separated) [m]: ').split()
+                            # ... and turn each piece in a float
+                            radial_stream_coords = list(map(float, radial_stream_coords))
+                        case _:
+                            raise ValueError(f"Unknown answer '{use_old_radial_stream_coords}'")
+                
+                if i > 0:
+                    print(f"Meridional velocity ratios (V_merid/V_merid@1st rotor LE) on the stream surface of the previous stage: {input_data['stages'][i-1]['meridional_velocity_ratios']}")
+                    use_old_merid_vel_ratios = input('Use the meridional velocity ratios of the previous stage also in this stage [y/n]? ')
+                    match use_old_merid_vel_ratios.lower():
+                        case 'y':
+                            meridional_velocity_ratios = input_data['stages'][i-1]['meridional_velocity_ratios'].copy()
+                        case 'n':
+                            # returns a string '0.5 0.6 07' => split at spaces...
+                            meridional_velocity_ratios = input('Meridional velocity ratios (V_merid/V_merid@1st rotor LE) on the stream surface (space-separated): ').split()
+                            # ... and turn each piece in a float
+                            meridional_velocity_ratios = list(map(float, meridional_velocity_ratios))
+                        case _:
+                            raise ValueError(f"Unknown answer '{use_old_merid_vel_ratios}'")
+                
+                if i > 0:
+                    print('"Indices of the leading and trailing edge of the previous stage (starting from index 1 on the mean stream surface): \n'
+                          "\t Leading edge blade 1: point {input_data['stages'][i-1]['LE_TE_mean_stream_surf'][0]]}"
+                          "\t Trailing edge blade 1: point {input_data['stages'][i-1]['LE_TE_mean_stream_surf'][1]]}"
+                          "\t Leading edge blade 2: point {input_data['stages'][i-1]['LE_TE_mean_stream_surf'][2]]}"
+                          "\t Trailing edge blade 2: point {input_data['stages'][i-1]['LE_TE_mean_stream_surf'][3]]}")
+                    
+                    use_old_LE_TE_idx = input('Use the leading and trailing edge indices of the previous stage also in this stage [y/n]? ')
+                    match use_old_LE_TE_idx.lower():
+                        case 'y':
+                            idx_LE_TE_mean_stream = input_data['stages'][i-1]['idx_LE_TE_mean_stream'].copy()
+                        case 'n':
+                            # returns a string '0.5 0.6 07' => split at spaces...
+                            idx_LE_TE_mean_stream = input('Leading and trailing edge indices on the stream surface (4 values, space-separated): ').split()
+                            # ... and turn each piece in a float
+                            idx_LE_TE_mean_stream = list(map(float, idx_LE_TE_mean_stream))
+                        case _:
+                            raise ValueError(f"Unknown answer '{use_old_LE_TE_idx}'")
+                if len(idx_LE_TE_mean_stream) != 4:
+                    raise ValueError('You must input 4 values: LE blade 1, TE blade 1, LE blade 2, TE blade 2')
+                
+                # MESH RECAP
+                # for the table only: list of empty strings with 4 labels
+                LE_TE_stream = ['']*N_pts_stream_surf
+                LE_TE_stream[idx_LE_TE_mean_stream[0]] = 'LE 1'
+                LE_TE_stream[idx_LE_TE_mean_stream[1]] = 'TE 1'
+                LE_TE_stream[idx_LE_TE_mean_stream[2]] = 'LE 2'
+                LE_TE_stream[idx_LE_TE_mean_stream[3]] = 'TE 2'
+                mesh_recap = PrettyTable()
+                mesh_recap.title = 'Stream surface coordinates - Stage {i}'
+                mesh_recap.add_column('Axial [m]', axial_stream_coords)
+                mesh_recap.add_column('Radial [m]', radial_stream_coords)
+                mesh_recap.add_column('V_m/V_m@LE rotor 1 [-]', meridional_velocity_ratios)
+                mesh_recap.add_column('LE/TE?', LE_TE_stream)
+                
+                if change_flow_stage and flow_new == 'mixed':
+                    print("Moving the last stream surface point to the trailing edge of blade 2 (required when machine flow type is changed from 'mixed' to 'axial'...")
+                    # (-1 because Fortran is 1-based indexing, but Python is 0-based)
+                    axial_stream_coords_out = axial_stream_coords[idx_LE_TE_mean_stream-1]
+                
+                change_stream_surf_coords = input('Change the new stream surface coordinates [y/n]?')
+                match change_stream_surf_coords.lower():
                     case 'y':
-                        N_pts_stream_surf = input_data['stages'][i-1]['N_points_stream_surface']
+                        change_stream_surf_coords = True
                     case 'n':
-                        N_pts_stream_surf = float(input('Number of points (i.e. axial coordinates) on the mean stream surface: '))
+                        change_stream_surf_coords = False
                     case _:
-                        raise ValueError(f"Unknown answer '{use_old_points_number}'")
-            if N_pts_stream_surf <= 0:
-                raise ValueError('The number of points on the mean stream surface cannot be zero or negative')
-            stage_data['N_points_stream_surface'] = N_pts_stream_surf
-            
-            
-            
+                        raise ValueError(f"Unknown answer '{change_stream_surf_coords}'")
+                stage_data['change_stream_surf_coords'] = change_stream_surf_coords
         
+        # DATA FOR BOT AXIAL AND MIXED FLOW TYPE
+        print('NB: blockage factor = sum of the hub and casing boundary layer displacement thicknesses, divided by the blade span')
+        print('Default values: \n'
+              f'\t BL at LE of 1st row: {meangen_def.blockageLE_1} \n'
+              f'\t BL at TE of 2nd row: {meangen_def.blockageTE_2}')
+        change_BF = input('Change the blockage factor default values [y/n]? ')
+        match change_stream_surf_coords.lower():
+            case 'y':
+                change_stream_surf_coords = True
+            case 'n':
+                change_stream_surf_coords = False
+            case _:
+                raise ValueError(f"Unknown answer '{change_stream_surf_coords}'")
+        stage_data['change_stream_surf_coords'] = change_stream_surf_coords
+        
+        if change_BF:
+            BF_LE = float(input('Blockage factor at the leading edge of the 1st blade row: '))
+            if BF_LE <= 0:
+                raise ValueError('The blockage factor cannot be zero or negative')
+            stage_data['blockage_factor_LE_first'] = BF_LE
+            
+            BF_TE = float(input('Blockage factor at the trailing edge of the 1st blade row: '))
+            if BF_LE <= 0:
+                raise ValueError('The blockage factor cannot be zero or negative')
+            stage_data['blockage_factor_TE_last'] = BF_TE
+        else:
+            # copy default values
+            stage_data['blockage_factor_LE_first'] = meangen_def.blockageLE_1
+            stage_data['blockage_factor_TE_last'] = meangen_def.blockageTE_2
+        
+            
+            
         # .copy() to avoid shallow copying it and changing it
         input_data['stages'][i] = stage_data.copy()
     
