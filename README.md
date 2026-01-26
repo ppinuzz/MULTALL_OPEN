@@ -55,3 +55,44 @@ CASE_DIR/
 |-- meangen.in
 ```
 
+
+## Original MEANGEN flowchart ##
+
+```mermaid
+graph TD
+     input@{shape: manual-input, label: "User Input"} 
+     --> lab1100@{shape: rect, label: "1100"}
+     --> CandAXI@{shape: decision, label: "IFSAME_ALL == 'C' \n and \n FLO_TYP == 'AXI'?"}
+     --YES--> a@{shape: rect, label: "FLOW_TYP = 'MIX'"} --> lab2000@{shape: rect, label: "2000"}
+     CandAXI --NO--> CandMIX@{shape: decision, label: "IFSAME_ALL == 'C' \n and \n FLO_TYP == 'MIX'?"}
+     --YES--> b@{shape: rect, label: "FLOW_TYP = 'AXI' \n and \n MIX_TYP = 'N'"} --> lab500@{shape: rect, label: "500"}
+     CandMIX --NO--> AXIY@{shape: decision, label: "FLOW_TYP = 'AXI' \n and \n IFSAME_ALL = 'Y'"}
+     --NO--> MIXY@{shape: decision, label: "FLOW_TYP = 'MIX' \n and \n IFSAME_ALL = 'Y'"}
+     AXIY --YES--> lab600@{shape: rect, label: "600"}
+     MIXY --NO--> lab500
+     MIXY --YES--> lab700@{shape: rect, label: "700"}
+     lab500 --> MIX@{shape: decision, label: "FLOW_TYP = 'MIX'?"}
+     MIX --YES--> lab2000
+     MIX --NO--> INTYPE@{shape: decision, label: "INTYPE?"}
+	 --A--> inputA["$$\chi, \phi, \psi$$"]
+	 INTYPE --B--> inputB["$$\phi, \alpha_{stat}^{out}, \alpha_{rot}^{out}$$"]
+	 INTYPE --C--> inputC["$$\phi, \theta_{rot}^{in}, \theta_{rot}^{out}$$"]
+	 INTYPE --D--> inputD["$$\theta_{1st}^{in}, \theta_{1st}^{out}, \chi$$"]
+	 inputA --> RADTYPE@{shape: decision, label: "RADTYPE?"}
+	 inputB --> RADTYPE
+	 inputC --> RADTYPE
+	 inputD --> RADTYPE
+	 --A--> radDes["$$R_{des}$$"]
+	 RADTYPE --B--> dhstage["$$\Delta h_{stage}$$"]
+	 --> cax["$$c_{ax,1}, c_{ax,2}, \Delta z_{row}, \Delta z_{stage}$$"]
+	 radDes --> cax
+	 --> lab600
+	 lab2000 --> MIXTYP@{shape: decision, label: "MIXTYP?"}
+	 MIXTYP --A--> typeA["$$\alpha_{in}, \alpha_{out}, \beta_{in}, \beta_{out}$$"]
+	 MIXTYP --B--> typeB["$$\phi_{rot,LE,1st}, \alpha_{in}, \alpha_{out}, \psi$$"]
+	 --> lab700
+	 typeA --> lab700 --> labs130["134, 135, 136, 137, 139"]
+	 --> changeStreamSurf@{shape: decision, label: "Change stream surface?"}
+	 --NO--> lab3000["3000"]
+	 changeStreamSurf --YES--> lab700
+```
