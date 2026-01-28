@@ -15,6 +15,9 @@ import pyMULTALL
 import pyMULTALL.auxiliaries as aux
 import pyMULTALL.meangen.defaults as meangen_def
 from prettytable import PrettyTable
+from pathlib import Path
+import yaml
+from colorama import just_fix_windows_console
 
 def print_startup_message(len_separator=70):
     """
@@ -651,25 +654,311 @@ def interactive_input():
     return input_data
 
 
-# ----------------------------- PRIVATE FUNCTIONS -----------------------------
+def print_input_file(input_data, legacy=True, input_file='meangen.in'):
+    
+    if legacy and input_file != 'meangen.in':
+        aux.print_message(f"Filename '{input_file}' is provided, but in legacy "
+                          "mode only 'meangen.in' is a valid filename.\n"
+                          "Reverting to default filename 'meangen.in'...", 
+                          level=aux.MessageLevel.WARNING)
+    input_file = Path(input_file)
+    
+    file_type = 'legacy' if legacy else 'YAML'
+    print(f'Writing MEANGEN input data to {file_type} input file: ')
+    print(f'{input_file.resolve()}')
+    if legacy:
+        pass
+        input_lines = _format_legacy_input(input_data)
+        with open(input_file, 'w') as file:
+            file.writelines(input_lines)
+    else:
+        with open(input_file, 'w') as file:
+            yaml.safe_dump(input_data, file)
+    
+    
 
-def _title_formatting(title, separator):
-
-    # if the entire line must be occupied by the title, the 2 space on the 
-    # sides of the title, and the dashes, calculate how many dashes are left
-    N_dashes = len(separator) - len(title) - 2
-    # assuming the separator is composed of the same character, e.g. '-', 
-    # repeated more than once => pick the separator char as separator[0]
-    half_sep_title = round(N_dashes / 2) * separator[0]
-    title = f'{half_sep_title} {title} {half_sep_title}'
-    # the number of dashes has been rounded down, if the line is not long 
-    # enough add dashes at the end of it
-    delta_dashes = len(separator) - len(title)
-    if delta_dashes > 0:
-        title = title + delta_dashes * '-'
+def _format_legacy_input(input_data):
+    
+    # formatted keeping the original syntax, which usually had "comments"
+    # starting either on column 25 (with an initial space, so effectively
+    # starting on column 26) or on column 6
+    
+    # reserve the first 24 columns for the variable content, then add a 
+    # whitespace (25th column) and start the text from column 26
+    # (T25 is the label used in FORTRAN77 to print from column 25, used in the
+    # original code)
+    T25 = '{:<24}{}'
+    T6 = '{:<5}{}'
+    # 2F10.3    2 values, right-aligned, each is a float occupying 10 columns
+    #           IN TOTAL, with 3 decimal digits
+    # => repeat manually the F10.3 specified, if needed 
+    # ('>' is the right-alignment)
+    F10_3 = '{:>10.3f}'
+    F12_3 = '{:>12.3f}'
+    F10_4 = '{:>10.4f}'
+    F10_5 = '{:>10.5f}'
+    F8_3 = '{:>8.3f}'
+    I5 = '{:>5d}'
+    
+    lines = []
+    
+    machine = 'C' if input_data["machine"] == 'compressor' else 'T'
+    lines.append(T25.format(machine, 
+                            'TURBO_TYP, "C" FOR A COMPRESSOR, "T" FOR A TURBINE'))
+    
+    flow_type = 'AXI' if input_data['machine_flow_type'] == 'axial' else 'MIX'
+    lines.append(T25.format(flow_type, 
+                            'FLO_TYP FOR AXIAL OR MIXED FLOW MACHINE'))
+    
+    # FORMAT(2F10.3, T25, 'bla bla bla')
+    lines.append(T25.format(F10_3.format(input_data['gas_properties']['gas_constant']) +
+                            F10_3.format(input_data['gas_properties']['gamma']),
+                            'GAS PROPERTIES, RGAS, GAMMA')
+                 )
+    # total pressure is originally in bar, not Pa
+    lines.append(T25.format(F10_3.format(input_data['inlet_conditions']['total_pressure']*1e-5) +
+                            F10_3.format(input_data['inlet_conditions']['total_temperature']),
+                            'POIN, TOIN')
+                 )
+    
+    lines.append(T25.format(I5.format(input_data['N_stages']), 
+                            'NUMBER OF STAGES IN THE MACHINE')
+                 )
+    
+    match input_data['design_point_radius']:
+        case 'hub':
+            ref_radius = 'H'
+        case 'mid':
+            ref_radius = 'M'
+        case 'tip':
+            ref_radius = 'T'
+    lines.append(T25.format(ref_radius, 
+                            'CHOICE OF DESIGN POINT RADIUS, HUB, MID OR TIP'))
+    
+    lines.append(T25.format(F12_3.format(input_data['rotation_speed']),
+                            'ROTATION SPEED, RPM')
+                 )
+    
+    lines.append(T25.format(F12_3.format(input_data['nass_flow_rate']),
+                            'MASS FLOW RATE, FLOWIN')
+                 )
+    
+    # STAGE DATA
+    for i, stage in enumerate(input_data['stages']):
+        if i > 1:
+            # this message makes sense only once you have at least 1 stage
+            equal_stage = 'N' if stage['equal_stage'].lower() == 'n' else 'Y'
+            lines.append(T25.format(equal_stage, 
+                                    'IFSAME_ALL, SET = "Y" TO REPEAT THE LAST STAGE INPUT TYPE AND VELOCITY TRIANGLES, SET = "C" TO CHANGE INPUT TYPE'))
         
-    return title
+        # only if stage is MIXED FLOW
+        match stage['stage_flow_type']:
+            case 'mixed':
+                input_method = 'A' if stage['input_method'] == 'blade_angles' else 'B'
+                lines.append(T25.format(input_method, 
+                                        'MIXTYP = INPUT TYPE FOR FLO_TYP = "MIX"'))
+                if input_method == 'A':
+                    lines.append(T25.format(F10_3.format(stage['alpha_stator_in']) +
+                                            F10_3.format(stage['alpha_stator_out']),
+                                            'ANGLES, STATOR_IN, STATOR_OUT')
+                                 )
+                    lines.append(T25.format(F10_3.format(stage['beta_rotor_in']) +
+                                            F10_3.format(stage['beta_rotor_out']),
+                                            'ANGLES, ROTOR_IN, ROTOR_OUT')
+                                 )
+                else:
+                    lines.append(T25.format(F10_4.format(input_data['phi_first_rotor_LE']),
+                                            'FLOW COEFFICIENT AT THE FIRST ROTOR LEADING EDGE')
+                                 )
+                    lines.append(T25.format(F10_3.format(stage['alpha_in_stage']) +
+                                            F10_3.format(stage['alpha_out_stage']),
+                                            'STAGE INLET AND OUTLET ABSOLUTE FLOW ANGLES')
+                                 )
+                    lines.append(T25.format(F10_4.format(stage['psi_rotor_LE']),
+                                            'STAGE LOADING COEFFICIENT AT THE ROTOR LEADING EDGE')
+                                 )
+                
+                # stream surface data
+                lines.append(T25.format(I5.format(stage['N_points_stream_surface']),
+                                        'NUMBER OF POINTS ON THE STREAM SURFACE')
+                             )
+                
+                lines.append('THE FOLLOWING LINE OF DATA CONTAINS THE STREAM SURFACE AXIAL COORDINATES')
+                axial_coords = ''
+                for point in stage['stream_surf_axial_coords']:
+                    axial_coords += F10_4.format(point)
+                lines.append(T25.format(axial_coords)
+                             )
+                
+                lines.append('THE FOLLOWING LINE OF DATA CONTAINS THE STREAM SURFACE RADIAL COORDINATES')
+                radial_coords = ''
+                for point in stage['stream_surf_radial_coords']:
+                    radial_coords += F10_4.format(point)
+                lines.append(T25.format(radial_coords)
+                             )
+                
+                lines.append('THE FOLLOWING LINE OF DATA CONTAINS THE MERIDIONAL VELOCITY RATIOS')
+                merid_vel_ratios = ''
+                for point in stage['meridional_velocity_ratios']:
+                    merid_vel_ratios += F10_4.format(point)
+                lines.append(T25.format(merid_vel_ratios)
+                             )
+                
+                lines.append(T25.format(I5.format(stage['idx_LE_TE_mean_stream'][0]) +
+                                        I5.format(stage['idx_LE_TE_mean_stream'][1]) +
+                                        I5.format(stage['idx_LE_TE_mean_stream'][2]) +
+                                        I5.format(stage['idx_LE_TE_mean_stream'][3]), 
+                                        'LEADING AND TRAILING EDGE POINTS ON THE MEAN STREAM SURFACE')
+                             )
+                
+                if stage['change_stream_surf_coords']:
+                    change_coords = 'Y'
+                else:
+                    change_coords = 'N'
+                lines.append(T25.format(change_coords, 
+                                        'DO YOU WANT TO CHANGE THE STREAM SURFACE COORDINATES?'))
+                
+                
+                
+                
+                
+            case 'axial':
+                match stage['velocity_triangles_method']:
+                    case 'chi_phi_psi':
+                        VT_method = 'A'
+                        # names of the 3 input variables
+                        in_1 = 'reaction_degree'
+                        in_2 = 'flow_coeff'
+                        in_3 = 'stage_load_coeff'
+                        comment = 'REACTION, FLOW COEFF., LOADING COEFF.'
+                    case 'phi_statout_rotout':
+                        VT_method = 'B'
+                        in_1 = 'flow_coeff'
+                        in_2 = 'angle_stat_out'
+                        in_3 = 'angle_rot_out'
+                        comment = 'FLOW COEFF., STATOR ANGLES'
+                    case 'phi_rotin_rotout':
+                        VT_method = 'C'
+                        in_1 = 'angle_rot_in'
+                        in_2 = 'angle_rot_out'
+                        in_3 = 'flow_coeff'
+                        comment = 'ROTOR ANGLES, FLOW COEFF.'
+                    case 'chi_rowin_rowout':
+                        VT_method = 'D'
+                        in_1 = 'angle_rot_in'
+                        in_2 = 'angle_row_out'
+                        in_3 = 'reaction_degree'
+                        comment = 'FIRST ROW ANGLES, REACTION'
+                
+                lines.append(T25.format(VT_method, 
+                                        'INTYPE, TO CHOOSE THE METHOD OF DEFINING THE VELOCITY TRIANGLES'))
+                
+                lines.append(T25.format(F12_3.format(stage[in_1]) +
+                                        F12_3.format(stage[in_2]) +
+                                        F12_3.format(stage[in_3]),
+                                        comment)
+                             )
+                
+                match stage['design_radius_method']:
+                    case 'set_radius':
+                        des_radius_method = 'A'
+                        comment = 'THE DESIGN POINT RADIUS'
+                        var_radius = 'design_radius'
+                    case 'set_enthalpy_change':
+                        des_radius_method = 'B'
+                        var_radius = 'actual_enthalpy_change'
+                        comment = 'STAGE ENTHALPY CHANGE, kJ/kg'
+                
+                lines.append(T25.format(des_radius_method, 
+                                        'RADTYPE, TO CHOOSE THE DESIGN POINT RADIUS'))
+                
+                lines.append(T25.format(F12_3.format(stage[var_radius]), 
+                                        comment)
+                             )
+                
+                lines.append(T25.format(F12_3.format(stage['axial_chord_1']) +
+                                        F12_3.format(stage['axial_chord_2']),
+                                        'BLADE AXIAL CHORDS IN METRES')
+                             )
+                
+                lines.append(T25.format(F12_3.format(stage['row_gap2cax']) +
+                                        F12_3.format(stage['stage_gap2cax']),
+                                        'ROW GAP AND STAGE GAP')
+                             )
+                
+                
+        
+        # FOR BOTH AXIAL AND MIXED FLOW STAGE
+        lines.append(T25.format(F10_5.format(stage['blockage_factor_LE_first']) +
+                                F10_5.format(stage['blockage_factor_TE_last']),
+                                'BLOCKAGE FACTORS: FBLOCK_LE,  FBLOCK_TE')
+                     )
+        
+        if stage['change_stage_angles']:
+            change_stage_angles = 'Y'
+        else:
+            change_stage_angles = 'N'
+        lines.append(T25.format(change_stage_angles, 
+                                "DO YOU WANT TO CHANGE THE ANGLES FOR THIS STAGE? 'Y' or 'N'"))
+        
+        lines.append(T25.format(F12_3.format(stage['eta_iso_stage_guess']), 
+                                'GUESS OF THE STAGE ISENTROPIC EFFICIENCY')
+                     )
+        
+        lines.append(T25.format(F8_3.format(stage['delta_first_row']) +
+                                F8_3.format(stage['delta_second_row']),
+                                'ESTIMATE OF THE FIRST AND SECOND ROW DEVIATION ANGLES')
+                     )
+        
+        lines.append(T25.format(F8_3.format(stage['incidence_first_row']) +
+                                F8_3.format(stage['incidence_second_row']),
+                                'FIRST AND SECOND ROW INCIDENCE ANGLES')
+                     )
+        
+        lines.append(T25.format(F8_3.format(stage['Q0_LE_row_1']) +
+                                F8_3.format(stage['Q0_TE_row_1']),
+                                'QO ANGLES AT LE AND TE OF ROW 1')
+                     )
+        
+        lines.append(T25.format(F8_3.format(stage['Q0_LE_row_2']) +
+                                F8_3.format(stage['Q0_TE_row_2']),
+                                'QO ANGLES AT LE AND TE OF ROW 2')
+                     )
+    
+    lines.append(T25.format(input_data['ouput_all_rows'],
+                            'IS OUTPUT REQUESTED FOR ALL BLADE ROWS?')
+                 )
+    
+    for i, stage in enumerate(input_data['stages']):
+        if stage['output_row_1']:
+            ouput_row_1 = 'Y'
+        else:
+            output_row_1 = 'N'
+        lines.append(T25.format(output_row_1,
+                                'IS OUTPUT REQUESTED FOR THIS BLADE ROW?')
+                     )
+        
+        if stage['output_row_2']:
+            ouput_row_2 = 'Y'
+        else:
+            output_row_2 = 'N'
+        lines.append(T25.format(output_row_2,
+                                'IS OUTPUT REQUESTED FOR THIS BLADE ROW?')
+                     )
+    
+    
+    return lines
+
+
+
 
 
 if __name__ == '__main__':
-    interactive_input()
+    # needed only when running this module from the CLI to check it
+    just_fix_windows_console()
+    
+    #interactive_input()
+    
+    dummy_input = {'T': 123.4, 'a': 'se', 'c': True, 'd': None}
+    file = 'prova.in'
+    print_input_file(dummy_input, legacy=True, input_file=file)
