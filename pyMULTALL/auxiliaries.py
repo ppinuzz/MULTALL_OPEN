@@ -147,6 +147,27 @@ def print_message(message, level=MessageLevel.BASIC):
     print(color + style + f'{message}' + Style.RESET_ALL)
 
 
+# ----------------------------- PRIVATE FUNCTIONS -----------------------------
+
+def _title_formatting(title, separator):
+
+    # if the entire line must be occupied by the title, the 2 space on the 
+    # sides of the title, and the dashes, calculate how many dashes are left
+    N_dashes = len(separator) - len(title) - 2
+    # assuming the separator is composed of the same character, e.g. '-', 
+    # repeated more than once => pick the separator char as separator[0]
+    half_sep_title = round(N_dashes / 2) * separator[0]
+    title = f'{half_sep_title} {title} {half_sep_title}'
+    # the number of dashes has been rounded down, if the line is not long 
+    # enough add dashes at the end of it
+    delta_dashes = len(separator) - len(title)
+    if delta_dashes > 0:
+        title = title + delta_dashes * '-'
+        
+    return title
+
+
+
 if __name__ == '__main__':
     my_OS = get_OS_name()
     

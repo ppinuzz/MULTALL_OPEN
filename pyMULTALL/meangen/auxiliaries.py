@@ -33,7 +33,7 @@ def print_startup_message(len_separator=70):
     """
     
     separator = len_separator * '-'
-    title = _title_formatting('pyMULTALL-OPEN', separator)
+    title = aux._title_formatting('pyMULTALL-OPEN', separator)
     
     print(separator)
     print(title)
