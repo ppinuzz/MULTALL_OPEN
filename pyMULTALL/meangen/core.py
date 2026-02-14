@@ -11,8 +11,11 @@ import subprocess
 import pyMULTALL.meangen as pymeangen
 import pyMULTALL.auxiliaries as aux
 from colorama import just_fix_windows_console
+import yaml
+from pathlib import Path
+import sys
 
-def meangen(case_dir, Fortran=True, input_file=False):
+def meangen(case_dir, Fortran=True, input_file=None):
     
     # make ANSI colours work on Windows without installing anything else
     # (does nothing on other OSs)
@@ -46,7 +49,13 @@ def meangen(case_dir, Fortran=True, input_file=False):
             aux.print_message('Close MEANGEN terminal window to resume parent proces...', aux.MessageLevel.INFO)
             meangen_process.wait()
     else:
+        input_file = Path(input_file)
         
-        # TODO: rea data from input file
+        if '.yaml' not in input_file.stem:
+            aux.print_message('Input file is not a .yaml file, but Python code can only take YAML as input. Aborting...', aux.MessageLevel.WARNING)
+            raise SystemExit
+        with open(input_file, 'r') as file:
+            input_data = yaml.safe_load(file)
         
         raise NotImplementedError('Python version of MEANGEN is not implemented yet')
+
